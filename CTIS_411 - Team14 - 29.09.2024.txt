@@ -1,0 +1,10 @@
+29.09.2024 13.00-14.00
+
+- Initial Plan'da eksik kalan yerler hakkında konuşuldu.
+- Milestones & Deliverables tarihleri tartışıldı.
+- Kullanılacak Framework'un Flutter olmasına, kullanılacak dilin Dart olmasına karar verildi.
+- Geliştirmenin yapılacağı platforma henüz karar verilmedi.
+- Herkesin satın alınacak ortak bir kurs üzerinden eğitime başlamasına ve bu eğitimin 1 Ekim itibarı ile başlayacağına, mümkün olursa da 1 Kasım'a kadar, en geç de kasımın 2. haftasına kadar biteceğine karar verildi.
+- Umut hocaya Inital Plan belgesindeki "Work Breakdown Structure" kısmının grafik ile mi anlatılması gerektiği yoksa listeleme ile mi anlatılması gerektiği, ver eğer listeleme ile anlatılmasından yana sorun yoksa burada formatın ne olmadı gerketiği (1.1, 1.2 veya 'bullet') sorulacak.
+- Business Model Canvas'ın nasıl yazılması gerektiği ve formatı sorulacak.
+- Gantt Chart ile ilgili bir soru sorulacak.
