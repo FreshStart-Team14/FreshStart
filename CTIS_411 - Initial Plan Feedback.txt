@@ -1,0 +1,35 @@
+14.10.2024 21.30-22.30
+Format hataları:
+İki adet "Table of Contents" başlığı var Bu yüzden başlık numaraları değişmiş.
+Table of Contents'in altındaki başlıkların fontları farklı, değişmeli
+List of Tables fontu da farklı ve bolt olmayacak.
+Abbreviations'ta bazı satırlar arası mesafe fazla.
+Product Purpose 1 numara olmalı.
+
+Değişmesi Gerekenler:
+1 - Executive Summary 1 sayfa değil. 2. paragrafta initial plandeki bulgular konulmalı.
+2 - Requirements Tablosundan önce bir yazı olmalı.
+3 - Non-Func'ta usability çok belirsiz. Bunlar ölçülebilir olmalı.
+4 - Non-func sayısı artmalı.
+5 - 4. Kısma kadar hiçbir yerde mobile app olduğu belli değil.
+6 - SDD'nin altında Architecture Design başlığı olmayacak. SDD'nin deadline'ı kasım değil ocak olacak. 
+7 - Validation ve Verification timeframe'leri değişsin. Verification Coding'ten önce gelmemeli.
+8 - WBS'de deliverable'lar değişecek. SDD veSPMP farklı deliverbalelar. Learning Flutter deliverable değil. Development deliverable değil. Ama ürün deliverable'dır.
+9 - Gantt Chart yukarıdan aşağıya doğru inmeli. Gantt Chart'ın içinde çıktılar farklı renkte olsun.
+10 - Gantt Chart'taki isimlerle WBS'deki isimler aynı olmalı.
+11 - Change Control - Github'ın adı geçmeli ve dokümanlarla ilgili değişikliklere de yer verilmeli
+12 - Assumptionlar - Kullanıcıların cep telefonlarının olması ile ilgili assumption çıkmalı.
+13 - Riskler de numaralandırılmalı.
+14 - Risk faktörleri tekrar yapılacak. Her bir risk için ayrı ayrı hesaplamaları olacak. Bütün hesaplamalardan sonra kısa bir paragrafla onun yorumu yapılsın.
+15 - Discussions - Yazılanlar doğru ama yazılma şekli yanlış. Anxiety cümle olacak. Bütün cümleler farklı şekilde yazılmış. Cümlelerde kullanılan İngilizce aynı olmalı. 
+
+Tavsiyeler:
+1 - Executive Summary'e Scrum yapacağımız veya önemli requirementlar yazılabilir.
+2 - Requirements tablosunun altına yazdığımız yazı tepeye yazılabilir. Requirementlar daha detaylı olabilir.
+3 - KVKK functional mı non-functional mı? Belki functional olabilir.
+5 - Geliştirilecek uygulamanın mobil uygulama olduğunun belirtilmesi Executive Summary'de veya Func tablosunda yer alabilir.
+6 - Timeframe'lerin ucu bu kadar açık olmamalı. Daha spesifik aralıklar olabilir.
+7 - Mesela Gantt Chart'ta SRS çıktısı farklı renkte olabilir. 
+8 - Stakeholders - end users: end-user'lar beta tester gibi olacaklar. Bu daha net olmalı.
+9 - Assumption'ların ikinci paragrafı biraz daha netleştirilebilir.
+10 - 2. risk gözden geçirilebilir. 
