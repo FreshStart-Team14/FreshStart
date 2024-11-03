@@ -1,0 +1,5 @@
+03.11.2024 15.15-16.00
+- Initial Plan'in son versiyonu hakkında genel revize yapıldı.
+- SRS belgesinin görev dağılımı hakkında konuşuldu. 
+- SRS belgesinin bölümleri hakkında genel bir tartışma yapıldı.
+- SRS belgesinin salı gününe (05.11.2024) kadar biteceğine ve geri kalan zamanda da belgenin formatı ile ilgilenileceği konuşuldu.
