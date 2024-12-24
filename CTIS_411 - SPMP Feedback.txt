@@ -1,0 +1,23 @@
+- Executive Summary SPMP'nin değil, düzelmesi lazım. Daha SPMP'ye özel olması lazım.
+- Executive Summary'de FreshStart'ın ne olduğunun anlatılmasına gerek yok.
+- Table of Contents'te Table of Content olmayacak.
+- Abrevation'lar alfabetik olacak
+- Scope'da SPMP'den kopuk, SPMP için özelleştirilmesi lazım.
+- Project Schedule'da çok detaylı bir WBS olması lazım. (Work Package'lara kadar)
+- Bunda görev dağılımı da yapılacak.
+- Başlıkların numaraları silinmiş, geri getirilecek.
+- Ödemeler ve faizler aylık hesaplanacak, 0.5 ay gibi bir şey olmayacak.
+- Cost hesaplamaları sadece kasım ayına kadar yapılacak, bunun mayısa kadar olması lazım.
+- Bunun tablosu da değişecek.
+- Cashflow diagramdaki oklar aşağı doğru olacak.
+- Effort Estimation'ın genel yapısı Scrum'a daha uygun hale getirilebilir (opsiyonel).
+- Estimation eklenecek WBS'deki iş ve work package'lara göre de tekrar değiştirilebilir.
+- Use case based estimation altına use case diagram konulacak.
+- 1915.2 person/hours
+- Ölçümlerden biri person-days diğeri person-hours olmuş, ikisinin de aynı olması lazım.
+- User story'ler için ayrı bir tablo olup bunların hangi use case ile ilişkili olduğunun gösterilmesi lazım.
+- Agile Estimation'daki "10'la çarpma" kısmının daha çok düşünülerek tekrar yapılması lazım.
+- En sonunda 3 tane person-days çıkacak, bunların karşılaştırılması, ve hangi estimation'ın kullanılacağına karar verilmesi lazım, bunun için ekstra bir paragraf daha konacak.
+- Metriclerin sayısı çok fazla. Gerçekten tutulacak metriclerin kalması lazım.
+- Sample Test Case'lerde bütün test case'ler yok. Eklenmesi lazım.
+- Discussions'ta format değişecek.
