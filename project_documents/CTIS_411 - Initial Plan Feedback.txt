@@ -1,0 +1,7 @@
+
+Değişmesi Gerekenler:
+14 - Risk faktörleri tekrar yapılacak. Her bir risk için ayrı ayrı hesaplamaları olacak. Bütün hesaplamalardan sonra kısa bir paragrafla onun yorumu yapılsın.
+
+Tavsiyeler:
+7 - Mesela Gantt Chart'ta SRS çıktısı farklı renkte olabilir. 
+10 - 2. risk gözden geçirilebilir. 

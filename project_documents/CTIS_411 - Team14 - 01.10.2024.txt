@@ -1,0 +1,11 @@
+01.10.2024 14.30-15.00 - Serkan Hocayla toplantı
+
+Kullanıcıların motivasyonlarını kaybettirmeyecek, hatta artıracak bir sistem kurulması gerektiği üzerine konuşuldu.
+Günlük süreci takip ederken bir yandan ulaştıracak bir amacın bulunması gerektiği üzerine konuşuldu.
+Çentik atma gibi, veya oyunlaştırma gibi (gamifiaction) olması gerektiği üzerine konuşuldu.
+Bunun karşılığında kullanıcının görmekten veya ulaşmaktan mutlu olacağı bir ödüllendirme sisteminin olması gerektiği üzerine konuşuldu.
+Programda kullanıcı, admin gibi rollerin yanı sıra doktor ve diyetisyen gibi rollerin de bulunması gerektiği, bu rollerin kullanıcıların süreçlerini takip edebilmesi özelliğinin bulunması gerektiği üzerine konuşuldu.
+Kullanıcıların birbirleri ile iletişime geçebileceği sosyal bir platformun da uygulamada yer bulabileceği üzerine konuşuldu.
+Kullanıcıların terapistler ile bireysel veya toplu terapi seanslarına girebileceği, bu seansların görüntülü, sesli veya en kötü ihtimalle yazılı platformlarda bulunabileceği konuşuldu.
+Terapiye katılacak kullanıcıların terapiye katılma sebepleri üzerine bir kategorilendirme oluşturulabileceği, ve bu kategorilendirmenin de yapay zekaya bağlanabileceği konuşuldu.
+
