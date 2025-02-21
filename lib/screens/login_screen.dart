@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 foregroundColor: Colors.blueAccent
               )
             ),
-                      TextButton(
+            TextButton(
             onPressed: () {
               Navigator.of(context).push(MaterialPageRoute(builder: (context) => ForgotPasswordScreen()));
             },
@@ -105,7 +105,6 @@ class _LoginScreenState extends State<LoginScreen> {
               foregroundColor: Colors.blueAccent
             ),
           ),
-
           ],
         ),
       ),
