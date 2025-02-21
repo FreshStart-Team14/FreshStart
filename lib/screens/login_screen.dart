@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freshstart/screens/create_account_screen.dart';
+import 'package:freshstart/screens/forgot_password_screen.dart';
 import 'package:freshstart/screens/register.dart';
 import 'dashboard.dart';
 
@@ -95,6 +96,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 foregroundColor: Colors.blueAccent
               )
             ),
+                      TextButton(
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => ForgotPasswordScreen()));
+            },
+            child: Text('Forgot Password?'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.blueAccent
+            ),
+          ),
+
           ],
         ),
       ),
