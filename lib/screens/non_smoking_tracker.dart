@@ -218,34 +218,33 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-class NonSmokingTrackerScreen extends StatefulWidget { //Since we deal with dynamic data here, stateful is used here
+class NonSmokingTrackerScreen extends StatefulWidget {
   @override
   _NonSmokingTrackerScreenState createState() => _NonSmokingTrackerScreenState();
 }
 
 class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
-
   Map<DateTime, List<String>> _nonSmokingDays = {};
   DateTime _selectedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.month; //From flutter package
+  CalendarFormat _calendarFormat = CalendarFormat.month;
   int _currentStreak = 0;
   int _totalXP = 0;
-  int _level = 1; //Variables
+  int _level = 1;
 
   @override
-  void initState() { //This method is called when widget is first created
+  void initState() {
     super.initState();
     _loadNonSmokingDays();
     _loadStreakData();
   }
 
-  void _loadNonSmokingDays() async { 
-    String userId = FirebaseAuth.instance.currentUser!.uid; //Get user's id to fetch its data
-    
-    // Load non-smoking days from Firestore
+  void _loadNonSmokingDays() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get(); //DocumentSnapshot is a firestore package. Stores single document values in it
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get();
       if (snapshot.exists) {
         List<String> savedDays = List<String>.from(snapshot.get('nonSmokingDays') ?? []);
         setState(() {
@@ -261,10 +260,9 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
 
   void _loadStreakData() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
-    
-    // Load streak data from Firestore
+
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get(); //DocumentSnapshot is a firestore package. Stores single document values in it
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get();
       if (snapshot.exists) {
         _currentStreak = snapshot.get('currentStreak') ?? 0;
         _totalXP = snapshot.get('totalXP') ?? 0;
@@ -276,42 +274,45 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
     }
   }
 
-  // SharedPreferences is flutter plugin to store data in key-value format on user device
   void _checkForStreakReset() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance(); //Gets user's saved preference instance
-    DateTime lastAddedDay = DateTime.parse(prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String()); //toIso8601String() converts date into string format, dart built-in function
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    DateTime lastAddedDay = DateTime.parse(prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String());
 
     if (DateTime.now().difference(lastAddedDay).inDays > 1) {
-      _currentStreak = 0; 
-      await prefs.setInt('currentStreak', _currentStreak); //Updates saved preference of the user
+      _currentStreak = 0;
+      await prefs.setInt('currentStreak', _currentStreak);
     }
   }
 
   void _saveNonSmokingDay() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedDays = _nonSmokingDays.keys.map((e) => e.toIso8601String()).toList();
+    List<String> savedDays = _nonSmokingDays.keys.map((e) => e.toIso8601String().split('T')[0]).toList();
 
     final todayString = DateTime.now().toIso8601String().split('T')[0];
 
-    if (!savedDays.contains(todayString)) { //To check if user already gave entry to streak already or not
+    if (!savedDays.contains(todayString)) {
       savedDays.add(todayString);
       _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
-      
-      
+
       try {
-        await FirebaseFirestore.instance.collection('users').doc(userId).update({ //To save non-smoked day to firestore
+        await FirebaseFirestore.instance.collection('users').doc(userId).update({
           'nonSmokingDays': savedDays,
         });
-        _updateStreakAndXP(); //Update streak and XP after saving the day
+        _updateStreakAndXP();
       } catch (e) {
         print('Error saving non-smoked day to Firestore: $e');
-      }      
-      await prefs.setString('lastAddedDay', DateTime.now().toIso8601String()); //Update last added day to prevent reset on next check
+      }
+
+      await prefs.setString('lastAddedDay', DateTime.now().toIso8601String());
     } else {
-      print('Non-smoked day already recorded for today.');
+      Fluttertoast.showToast(
+        msg: "This day is already marked.",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+      );
     }
-    
+
     setState(() {
       _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
     });
@@ -321,19 +322,18 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
     _currentStreak++;
-    
-    int earnedXP = (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0; //update XP based on current streak
+
+    int earnedXP = (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0;
     _totalXP += earnedXP;
     _level = _calculateLevel(_totalXP);
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({ //firestore update
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'currentStreak': _currentStreak,
         'totalXP': _totalXP,
         'level': _level,
         'lastAddedDay': DateTime.now().toIso8601String(),
       });
-      print('Document updated successfully.');
     } catch (e) {
       print('Error updating Firestore: $e');
     }
@@ -349,14 +349,14 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
       requiredXP += 500;
     }
 
-    return level; 
+    return level;
   }
 
   void _resetData() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({ //to reset progress in firestore
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'currentStreak': 0,
         'totalXP': 0,
         'level': 1,
@@ -364,11 +364,11 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
         'nonSmokingDays': [],
       });
 
-      setState(() { //To reset local state
+      setState(() {
         _currentStreak = 0;
         _totalXP = 0;
         _level = 1;
-        _nonSmokingDays.clear(); // Clear the local non-smoking days
+        _nonSmokingDays.clear();
       });
     } catch (e) {
       print('Error resetting data in Firestore: $e');
@@ -378,10 +378,14 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 157, 157, 157), // Light grey background
       appBar: AppBar(
-        title: Text('Non-Smoking Tracker', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'Non-Smoking Tracker',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.yellow),
+        ),
         centerTitle: true,
-        backgroundColor:Colors.blueAccent, // header
+        backgroundColor: Colors.blueAccent, // Blue header
         elevation: 4,
       ),
       body: Padding(
@@ -390,7 +394,7 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white, // Calendar remains white
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -400,92 +404,70 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
                   ),
                 ],
               ),
-              child: TableCalendar( //Calendar Widget from flutter package
+              child: TableCalendar(
                 focusedDay: _selectedDay,
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2030, 12, 31),
                 calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
                     _selectedDay = selectedDay;
                     _calendarFormat = CalendarFormat.month;
                   });
                 },
-                onFormatChanged: (format) {
-                  setState(() {
-                    _calendarFormat = format;
-                  });
-                },
-                eventLoader: (day) {
-                  return _nonSmokingDays[day] ?? [];
-                },
-                calendarStyle: CalendarStyle(
-                  markerDecoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                  ),
-                  todayDecoration: BoxDecoration(
-                    color: Colors.blueAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Colors.orange,
-                    shape: BoxShape.circle,
-                  ),
-                  markersMaxCount: 1,
-                ),
+                eventLoader: (day) => _nonSmokingDays[day] ?? [],
               ),
             ),
             SizedBox(height: 20),
-            // Add Non-Smoked Day Button
-            ElevatedButton( // Button design to save non smoked day
-              onPressed: _saveNonSmokingDay, //when pressed this method is launched
-              child: Text('Add Non-Smoked Day'),
+            ElevatedButton(
+              onPressed: _saveNonSmokingDay,
+              child: Text(
+                'Add Non-Smoked Day',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:Colors.blueAccent,
+                backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                textStyle: TextStyle(fontSize: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
             SizedBox(height: 10),
-            ElevatedButton( // Reset Streak Button
-              onPressed: _resetData, //When this button is clicked this method will be launched
+            ElevatedButton(
+              onPressed: _resetData,
               child: Text('Reset Streak, XP, and Level'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Red button for resetting
-                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                textStyle: TextStyle(fontSize: 16),
+                backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
             SizedBox(height: 20),
-            // Streak, XP, Level Information
-            Text(
-              'Current Streak: $_currentStreak days',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Total XP: $_totalXP',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Level: $_level',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _infoRow('Current Streak: $_currentStreak days'),
+                _infoRow('Total XP: $_totalXP'),
+                _infoRow('Level: $_level'),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _infoRow(String text) {
+    return Row(
+      children: [
+        Icon(Icons.star, color: Colors.amber),
+        SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
 }
+
+
 

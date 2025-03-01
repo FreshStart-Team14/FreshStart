@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1029181585413:android:6293a00e441e40018e046c",
         "android_client_info": {
-          "package_name": "com.freshstart.app"
+          "package_name": "com.example.freshstart"
         }
       },
       "oauth_client": [],
