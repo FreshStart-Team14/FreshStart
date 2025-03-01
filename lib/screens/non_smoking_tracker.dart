@@ -1,218 +1,3 @@
-
-/*
-  void _saveNonSmokingDay() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedDays = prefs.getStringList('nonSmokingDays') ?? [];
-
-    final todayString = DateTime.now().toIso8601String().split('T')[0];
-    if (!savedDays.contains(todayString)) {
-      savedDays.add(todayString);
-      await prefs.setStringList('nonSmokingDays', savedDays);
-      _updateStreakAndXP();
-    }
-    
-    setState(() {
-      _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
-    });
-  }
-*/
-/*
-import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-class NonSmokingTrackerScreen extends StatefulWidget {
-  @override
-  _NonSmokingTrackerScreenState createState() => _NonSmokingTrackerScreenState();
-}
-
-class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
-  Map<DateTime, List<String>> _nonSmokingDays = {};
-  DateTime _selectedDay = DateTime.now();
-  CalendarFormat _calendarFormat = CalendarFormat.month;
-
-  int _currentStreak = 0;
-  int _totalXP = 0;
-  int _level = 1;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadNonSmokingDays();
-    _loadStreakData();
-  }
-
-  void _loadNonSmokingDays() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final savedDays = prefs.getStringList('nonSmokingDays') ?? [];
-
-    setState(() {
-      _nonSmokingDays = {
-        for (var day in savedDays) DateTime.parse(day): ['Non-Smoked']
-      };
-    });
-  }
-
-  void _loadStreakData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _currentStreak = prefs.getInt('currentStreak') ?? 0;
-    _totalXP = prefs.getInt('totalXP') ?? 0;
-    _level = prefs.getInt('level') ?? 1;
-    _checkForStreakReset();
-  }
-
-  void _checkForStreakReset() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    DateTime lastAddedDay = DateTime.parse(prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String());
-
-    if (DateTime.now().difference(lastAddedDay).inDays > 1) {
-      _currentStreak = 0; // Reset streak if no days are added in between
-      await prefs.setInt('currentStreak', _currentStreak);
-    }
-  }
-
-  void _saveNonSmokingDay() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedDays = prefs.getStringList('nonSmokingDays') ?? [];
-
-    final todayString = DateTime.now().toIso8601String().split('T')[0];
-
-    // For testing, allow adding the same day multiple times
-    if (!savedDays.contains(todayString)) {
-      savedDays.add(todayString);
-      await prefs.setStringList('nonSmokingDays', savedDays);
-      _updateStreakAndXP();
-    } else {
-      // Add logic here for testing, e.g., adding a new day
-      DateTime newDay = DateTime.now().add(Duration(days: 1));
-      String newDayString = newDay.toIso8601String().split('T')[0];
-      savedDays.add(newDayString);
-      await prefs.setStringList('nonSmokingDays', savedDays);
-      _updateStreakAndXP();
-    }
-
-    setState(() {
-      _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
-    });
-  }
-
-  void _updateStreakAndXP() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _currentStreak++;
-    await prefs.setInt('currentStreak', _currentStreak);
-
-    // Update XP based on current streak
-    int earnedXP = (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0;
-
-    _totalXP += earnedXP;
-    await prefs.setInt('totalXP', _totalXP);
-    _level = _calculateLevel(_totalXP);
-    await prefs.setInt('level', _level);
-    await prefs.setString('lastAddedDay', DateTime.now().toIso8601String());
-  }
-
-  int _calculateLevel(int xp) {
-    int level = 1;
-    int requiredXP = 500;
-
-    while (level <= 150 && xp >= requiredXP) {
-      xp -= requiredXP;
-      level++;
-      requiredXP += 500; // Increase required XP for the next level
-    }
-
-    return level; // Returns the current level, maxing out at 150
-  }
-
-  void _resetData() async { // TEST-----------------------------------------
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('currentStreak', 0);
-    await prefs.setInt('totalXP', 0);
-    await prefs.setInt('level', 1);
-    await prefs.setString('lastAddedDay', DateTime.now().toIso8601String());
-
-    // Optionally, clear the non-smoking days as well
-    await prefs.setStringList('nonSmokingDays', []);
-
-    // Reset the local state
-    setState(() {
-      _currentStreak = 0;
-      _totalXP = 0;
-      _level = 1;
-      _nonSmokingDays.clear(); // Clear the local non-smoking days
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Non-Smoking Tracker'),
-      ),
-      body: Column(
-        children: [
-          TableCalendar(
-            focusedDay: _selectedDay,
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            calendarFormat: _calendarFormat,
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDay, day);
-            },
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _calendarFormat = CalendarFormat.month;
-              });
-            },
-            onFormatChanged: (format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            },
-            eventLoader: (day) {
-              return _nonSmokingDays[day] ?? [];
-            },
-            calendarStyle: CalendarStyle(
-              markerDecoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-              todayDecoration: BoxDecoration(
-                color: Colors.blueAccent,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.orange,
-                shape: BoxShape.circle,
-              ),
-              markersMaxCount: 1,
-              // This highlights the days when the user logs non-smoking days
-            ),
-          ),
-          ElevatedButton(
-            onPressed: _saveNonSmokingDay,
-            child: Text('Add Non-Smoked Day'),
-          ),
-          ElevatedButton( // TEST------------------------------------
-            onPressed: _resetData,
-            child: Text('Reset Streak, XP, and Level'),
-          ),
-          SizedBox(height: 20),
-          Text('Current Streak: $_currentStreak days'),
-          Text('Total XP: $_totalXP'),
-          Text('Level: $_level'),
-        ],
-      ),
-    );
-  }
-}
-
-*/
-
-
-
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -222,31 +7,61 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 class NonSmokingTrackerScreen extends StatefulWidget {
   @override
-  _NonSmokingTrackerScreenState createState() => _NonSmokingTrackerScreenState();
+  _NonSmokingTrackerScreenState createState() =>
+      _NonSmokingTrackerScreenState();
 }
 
-class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
+class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
+    with SingleTickerProviderStateMixin {
   Map<DateTime, List<String>> _nonSmokingDays = {};
   DateTime _selectedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
   int _currentStreak = 0;
   int _totalXP = 0;
   int _level = 1;
+  late AnimationController _buttonAnimationController;
+  late Animation<double> _scaleAnimation;
+  bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
     _loadNonSmokingDays();
     _loadStreakData();
+
+    _buttonAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(
+      CurvedAnimation(
+        parent: _buttonAnimationController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _buttonAnimationController.dispose();
+    super.dispose();
   }
 
   void _loadNonSmokingDays() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
       if (snapshot.exists) {
-        List<String> savedDays = List<String>.from(snapshot.get('nonSmokingDays') ?? []);
+        List<String> savedDays =
+            List<String>.from(snapshot.get('nonSmokingDays') ?? []);
         setState(() {
           _nonSmokingDays = {
             for (var day in savedDays) DateTime.parse(day): ['Non-Smoked']
@@ -262,7 +77,10 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
     try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      DocumentSnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
       if (snapshot.exists) {
         _currentStreak = snapshot.get('currentStreak') ?? 0;
         _totalXP = snapshot.get('totalXP') ?? 0;
@@ -276,7 +94,8 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
 
   void _checkForStreakReset() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    DateTime lastAddedDay = DateTime.parse(prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String());
+    DateTime lastAddedDay = DateTime.parse(
+        prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String());
 
     if (DateTime.now().difference(lastAddedDay).inDays > 1) {
       _currentStreak = 0;
@@ -285,9 +104,19 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
   }
 
   void _saveNonSmokingDay() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+    _buttonAnimationController.forward();
+
+    // Simulate a brief loading period
+    await Future.delayed(const Duration(milliseconds: 500));
+
     String userId = FirebaseAuth.instance.currentUser!.uid;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedDays = _nonSmokingDays.keys.map((e) => e.toIso8601String().split('T')[0]).toList();
+    List<String> savedDays = _nonSmokingDays.keys
+        .map((e) => e.toIso8601String().split('T')[0])
+        .toList();
 
     final todayString = DateTime.now().toIso8601String().split('T')[0];
 
@@ -296,7 +125,10 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
       _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
 
       try {
-        await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({
           'nonSmokingDays': savedDays,
         });
         _updateStreakAndXP();
@@ -313,7 +145,10 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
       );
     }
 
+    await Future.delayed(const Duration(milliseconds: 500));
+    _buttonAnimationController.reverse();
     setState(() {
+      _isProcessing = false;
       _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
     });
   }
@@ -323,7 +158,8 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
 
     _currentStreak++;
 
-    int earnedXP = (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0;
+    int earnedXP =
+        (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0;
     _totalXP += earnedXP;
     _level = _calculateLevel(_totalXP);
 
@@ -375,99 +211,286 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 157, 157, 157), // Light grey background
-      appBar: AppBar(
-        title: Text(
-          'Non-Smoking Tracker',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.yellow),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent, // Blue header
-        elevation: 4,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white, // Calendar remains white
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 6,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: TableCalendar(
-                focusedDay: _selectedDay,
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _calendarFormat = CalendarFormat.month;
-                  });
-                },
-                eventLoader: (day) => _nonSmokingDays[day] ?? [],
-              ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
+  Widget _buildAnimatedButton() {
+    return AnimatedBuilder(
+      animation: _buttonAnimationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Container(
+            width: double.infinity,
+            margin: EdgeInsets.symmetric(horizontal: 20),
+            height: 55,
+            child: ElevatedButton(
               onPressed: _saveNonSmokingDay,
-              child: Text(
-                'Add Non-Smoked Day',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
+                elevation: _isProcessing ? 2 : 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedOpacity(
+                    duration: Duration(milliseconds: 200),
+                    opacity: _isProcessing ? 0 : 1,
+                    child: Text(
+                      'Add Non-Smoked Day',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    duration: Duration(milliseconds: 200),
+                    opacity: _isProcessing ? 1 : 0,
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _resetData,
-              child: Text('Reset Streak, XP, and Level'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-            ),
-            SizedBox(height: 20),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _infoRow('Current Streak: $_currentStreak days'),
-                _infoRow('Total XP: $_totalXP'),
-                _infoRow('Level: $_level'),
-              ],
-            ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatsCard() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade800, Colors.blue.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem(
+                icon: Icons.local_fire_department,
+                label: 'Current Streak',
+                value: '$_currentStreak days',
+                color: Colors.orange,
+              ),
+              Container(
+                  height: 40, width: 1, color: Colors.white.withOpacity(0.3)),
+              _buildStatItem(
+                icon: Icons.star,
+                label: 'Level',
+                value: '$_level',
+                color: Colors.amber,
+              ),
+            ],
+          ),
+          Divider(color: Colors.white.withOpacity(0.3), height: 30),
+          _buildStatItem(
+            icon: Icons.emoji_events,
+            label: 'Total XP',
+            value: '$_totalXP XP',
+            color: Colors.greenAccent,
+            isLarge: true,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _infoRow(String text) {
-    return Row(
+  Widget _buildStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    bool isLarge = false,
+  }) {
+    return Column(
       children: [
-        Icon(Icons.star, color: Colors.amber),
-        SizedBox(width: 8),
+        Icon(icon, color: color, size: isLarge ? 32 : 24),
+        SizedBox(height: 8),
         Text(
-          text,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: isLarge ? 16 : 14,
+          ),
+        ),
+        SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: isLarge ? 24 : 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
   }
+
+  Widget _buildCalendarCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: TableCalendar(
+          focusedDay: _selectedDay,
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2030, 12, 31),
+          calendarFormat: _calendarFormat,
+          selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = selectedDay;
+              _calendarFormat = CalendarFormat.month;
+            });
+          },
+          eventLoader: (day) => _nonSmokingDays[day] ?? [],
+          calendarStyle: CalendarStyle(
+            markersMaxCount: 1,
+            markerDecoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+            selectedDecoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+            ),
+            todayDecoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+          ),
+          headerStyle: HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+            titleTextStyle: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResetButton() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10),
+      child: TextButton.icon(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Reset Progress'),
+              content: Text(
+                  'Are you sure you want to reset all your progress? This action cannot be undone.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _resetData();
+                    Navigator.pop(context);
+                  },
+                  child: Text('Reset', style: TextStyle(color: Colors.red)),
+                ),
+              ],
+            ),
+          );
+        },
+        icon: Icon(Icons.refresh, color: Colors.red.withOpacity(0.8)),
+        label: Text(
+          'Reset Progress',
+          style: TextStyle(color: Colors.red.withOpacity(0.8)),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Color(0xFFF5F6FA),
+      appBar: AppBar(
+        title: Text(
+          'Non-Smoking Tracker',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.blue.shade800,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade800,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: _buildStatsCard(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    _buildCalendarCard(),
+                    SizedBox(height: 20),
+                    _buildAnimatedButton(),
+                    _buildResetButton(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
-
-
-
