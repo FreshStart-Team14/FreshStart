@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'confidence_screen.dart';
 
 class EmotionSelectionScreen extends StatelessWidget {
@@ -57,21 +58,46 @@ class EmotionSelectionScreen extends StatelessWidget {
             stops: [0.0, 0.3],
           ),
         ),
-        child: GridView.builder(
-          padding: EdgeInsets.all(16),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 0.8,
-          ),
-          itemCount: emotions.length,
-          itemBuilder: (context, index) {
-            return _buildEmotionCard(context, emotions[index]);
+        child: FutureBuilder(
+          future: _checkLastEntryDate(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasData && snapshot.data == true) {
+              return Center(child: Text('See you tomorrow!'));
+            } else {
+              return GridView.builder(
+                padding: EdgeInsets.all(16),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.8,
+                ),
+                itemCount: emotions.length,
+                itemBuilder: (context, index) {
+                  return _buildEmotionCard(context, emotions[index]);
+                },
+              );
+            }
           },
         ),
       ),
     );
+  }
+
+  Future<bool> _checkLastEntryDate() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? lastEntryDateStr = prefs.getString('lastEntryDate');
+    
+    if (lastEntryDateStr != null) {
+      DateTime lastEntryDate = DateTime.parse(lastEntryDateStr);
+      DateTime today = DateTime.now();
+      return lastEntryDate.year == today.year &&
+             lastEntryDate.month == today.month &&
+             lastEntryDate.day == today.day;
+    }
+    return false; // No entry yet
   }
 
   Widget _buildEmotionCard(BuildContext context, Map<String, dynamic> emotion) {

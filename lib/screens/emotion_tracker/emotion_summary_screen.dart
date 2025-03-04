@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EmotionSummaryScreen extends StatelessWidget {
   final String mainEmotion;
@@ -13,6 +14,8 @@ class EmotionSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _saveEmotionalState(mainEmotion, confidence, preciseEmotions);
+    
     return Scaffold(
       appBar: AppBar(
         title: Text('Emotion Summary'),
@@ -112,6 +115,25 @@ class EmotionSummaryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _saveEmotionalState(String mainEmotion, String confidence, List<String> preciseEmotions) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> emotionalStates = prefs.getStringList('emotionalStates') ?? [];
+    
+    // Create a new emotional state entry
+    String newState = 'Main: $mainEmotion, Confidence: $confidence, Precise: ${preciseEmotions.join(', ')}';
+    
+    // Add the new state and limit to the last 5 entries
+    emotionalStates.add(newState);
+    if (emotionalStates.length > 5) {
+      emotionalStates.removeAt(0); // Remove the oldest entry
+    }
+    
+    await prefs.setStringList('emotionalStates', emotionalStates);
+    
+    // Save the last entry date
+    await prefs.setString('lastEntryDate', DateTime.now().toIso8601String());
   }
 
   Widget _buildSummaryItem(String label, String value, IconData icon) {
