@@ -9,77 +9,183 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freshstart/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freshstart/screens/emotion_tracker/emotion_selection_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class DashboardScreen extends StatelessWidget { //Stateless because dashboard is static 
+class DashboardScreen extends StatelessWidget {
+  //Stateless because dashboard is static
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('FreshStart', style: TextStyle(fontWeight: FontWeight.bold)), //Title of the page
-        backgroundColor: Colors.blueAccent,
+        elevation: 0, // Remove shadow
+        title: Row(
+          children: [
+            Icon(
+              Icons.eco_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Fresh',
+              style: GoogleFonts.quicksand(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.0,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              'Start',
+              style: GoogleFonts.quicksand(
+                fontSize: 28,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 1.0,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.blueAccent.shade700,
         actions: [
           IconButton(
-            icon: Icon(Icons.logout), //IconButton with logout to let user log out
+            icon: Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut(); //After log out action, firebase auth signs out user
+              await FirebaseAuth.instance
+                  .signOut(); //After log out action, firebase auth signs out user
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => LoginScreen()), //User is navigated back to login screen
+                MaterialPageRoute(
+                    builder: (context) =>
+                        LoginScreen()), //User is navigated back to login screen
               );
             },
           ),
         ],
       ),
-      body: SingleChildScrollView( // Wrap GridView in SingleChildScrollView
-        child: GridView.count(
-          shrinkWrap: true, // Add this
-          physics: NeverScrollableScrollPhysics(), // Add this
-          crossAxisCount: 2, // Two items per row
-          padding: EdgeInsets.all(15.0), //Spacing
-          crossAxisSpacing: 15.0,
-          mainAxisSpacing: 15.0,
-          children: <Widget>[
-            _buildDashboardItem(context, 'How am I Today?', EmotionSelectionScreen(), Icons.mood),
-            _buildDashboardItem(context, 'Non-Smoking Tracker', NonSmokingTrackerScreen(), Icons.check_circle),
-            _buildDashboardItem(context, 'Weight Tracker', WeightTrackerScreen(), Icons.fitness_center),
-            _buildDashboardItem(context, 'Saved Money', SavedMoneyScreen(), Icons.money),
-            _buildDashboardItem(context, 'Non-Smoked Cigarettes', NonSmokedCigarettesScreen(), Icons.smoking_rooms),
-            _buildDashboardItem(context, 'Personalized Diet Plans', DietPlansScreen(), Icons.restaurant),
-            _buildDashboardItem(context, 'Profile', ProfileScreen(), Icons.person),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blueAccent.shade700, Colors.blueAccent.shade100],
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(20.0, 30.0, 20.0, 40.0),
+                child: Text(
+                  'Welcome Back!',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 2),
+                        blurRadius: 6,
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              GridView.count(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                crossAxisSpacing: 15.0,
+                mainAxisSpacing: 15.0,
+                children: <Widget>[
+                  _buildDashboardItem(context, 'How am I Today?',
+                      EmotionSelectionScreen(), Icons.mood),
+                  _buildDashboardItem(context, 'Non-Smoking Tracker',
+                      NonSmokingTrackerScreen(), Icons.check_circle),
+                  _buildDashboardItem(context, 'Weight Tracker',
+                      WeightTrackerScreen(), Icons.fitness_center),
+                  _buildDashboardItem(
+                      context, 'Saved Money', SavedMoneyScreen(), Icons.money),
+                  _buildDashboardItem(context, 'Non-Smoked Cigarettes',
+                      NonSmokedCigarettesScreen(), Icons.smoking_rooms),
+                  _buildDashboardItem(context, 'Personalized Diet Plans',
+                      DietPlansScreen(), Icons.restaurant),
+                  _buildDashboardItem(
+                      context, 'Profile', ProfileScreen(), Icons.person),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDashboardItem(BuildContext context, String title, Widget screen, IconData icon) { //To give action to each item on the dashboard and to give style to them
+  Widget _buildDashboardItem(
+      BuildContext context, String title, Widget screen, IconData icon) {
+    //To give action to each item on the dashboard and to give style to them
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => screen)); //On single tap user will be navigated to tapped "context" viewd
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    screen)); //On single tap user will be navigated to tapped "context" viewd
       },
       child: Card(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0), // for rounded corners
+          borderRadius: BorderRadius.circular(20.0),
         ),
-        elevation: 5, // to add shadow
+        elevation: 10,
+        shadowColor: Colors.black38,
         child: Container(
-          padding: EdgeInsets.all(15.0),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-            color: Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(20.0),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.white, Colors.blue.shade100],
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 40, color: Colors.blueAccent), //To configure each icon
-              SizedBox(height: 10),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent, 
+              Container(
+                padding: EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  size: 35,
+                  color: Colors.blue.shade800,
+                ),
+              ),
+              SizedBox(height: 15),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade900,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ],
