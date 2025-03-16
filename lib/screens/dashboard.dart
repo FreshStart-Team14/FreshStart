@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freshstart/screens/challenges.dart';
 import 'package:freshstart/screens/non_smoking_tracker.dart';
 import 'package:freshstart/screens/weight_tracker.dart';
 import 'package:freshstart/screens/saved_money.dart';
@@ -116,6 +117,8 @@ class DashboardScreen extends StatelessWidget {
                       DietPlansScreen(), Icons.restaurant),
                   _buildDashboardItem(
                       context, 'Profile', ProfileScreen(), Icons.person),
+                  _buildDashboardItem(context, 'Challenges', ChallengesScreen(),
+                      Icons.track_changes)
                 ],
               ),
             ],
