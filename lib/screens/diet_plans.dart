@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freshstart/src/services/openai_service.dart';
 
 class DietPlansScreen extends StatefulWidget {
   @override
@@ -32,10 +33,19 @@ class _DietPlansScreenState extends State<DietPlansScreen> {
         setState(() {
           bmi = weight / (heightInMeters * heightInMeters);
           bmiCategory = _getBMICategory(bmi!);
-          dietPlan = _getDietPlan(bmiCategory);
         });
+        _fetchDietPlan();
       }
     }
+  }
+
+  Future<void> _fetchDietPlan() async{
+    final OpenAIService openAIService = OpenAIService();
+    final plan = await openAIService.getDietPlan(bmiCategory);
+
+    setState(() {
+      dietPlan = plan.isNotEmpty ? plan : _getDietPlan(bmiCategory);
+    });
   }
 
   String _getBMICategory(double bmi) {
