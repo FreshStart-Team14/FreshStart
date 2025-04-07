@@ -11,21 +11,17 @@ import 'package:freshstart/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freshstart/screens/emotion_tracker/emotion_selection_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:freshstart/screens/community_screen.dart'; 
 
 class DashboardScreen extends StatelessWidget {
-  //Stateless because dashboard is static
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0, // Remove shadow
+        elevation: 0,
         title: Row(
           children: [
-            Icon(
-              Icons.eco_rounded,
-              size: 32,
-              color: Colors.white,
-            ),
+            Icon(Icons.eco_rounded, size: 32, color: Colors.white),
             SizedBox(width: 12),
             Text(
               'Fresh',
@@ -52,13 +48,10 @@ class DashboardScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.logout, color: Colors.white),
             onPressed: () async {
-              await FirebaseAuth.instance
-                  .signOut(); //After log out action, firebase auth signs out user
+              await FirebaseAuth.instance.signOut();
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        LoginScreen()), //User is navigated back to login screen
+                MaterialPageRoute(builder: (context) => LoginScreen()),
               );
             },
           ),
@@ -118,7 +111,9 @@ class DashboardScreen extends StatelessWidget {
                   _buildDashboardItem(
                       context, 'Profile', ProfileScreen(), Icons.person),
                   _buildDashboardItem(context, 'Challenges', ChallengesScreen(),
-                      Icons.track_changes)
+                      Icons.track_changes),
+                  _buildDashboardItem(context, 'FreshAI',
+                      CommunityScreen(), Icons.people), 
                 ],
               ),
             ],
@@ -130,14 +125,12 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildDashboardItem(
       BuildContext context, String title, Widget screen, IconData icon) {
-    //To give action to each item on the dashboard and to give style to them
     return GestureDetector(
       onTap: () {
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    screen)); //On single tap user will be navigated to tapped "context" viewd
+          context,
+          MaterialPageRoute(builder: (context) => screen),
+        );
       },
       child: Card(
         shape: RoundedRectangleBorder(

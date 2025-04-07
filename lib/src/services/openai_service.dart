@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _apiKey = 'KEY GOES HERE'; 
+  static const String _apiKey = 'API GOES HERE'; 
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
   Future<Map<String, List<String>>> getDietPlan(String bmiCategory) async {

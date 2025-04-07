@@ -1,0 +1,2 @@
+C:/Users/USER/Desktop/ardabranch/FreshStart/android/app/.cxx/Debug/3j2m2124/x86/CMakeFiles/edit_cache.dir
+C:/Users/USER/Desktop/ardabranch/FreshStart/android/app/.cxx/Debug/3j2m2124/x86/CMakeFiles/rebuild_cache.dir
