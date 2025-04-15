@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _apiKey = 'KEY GOES HERE'; 
+  static const String _apiKey = 'API S GOES HERE'; 
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
   Future<Map<String, List<String>>> getDietPlan(String bmiCategory) async {
@@ -24,13 +24,13 @@ class OpenAIService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        "model": "gpt-4",
+        "model": "gpt-3.5-turbo",
         "messages": [
           {"role": "system", "content": "You are a dietitian assistant."},
           {"role": "user", "content": prompt}
         ],
         "max_tokens": 200,
-        "temperature": 0.7,
+        "temperature": 0.3,
       }),
     );
 
