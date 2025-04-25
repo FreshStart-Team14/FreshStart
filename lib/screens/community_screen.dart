@@ -13,7 +13,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isLoading = false;
 
   // 🚨 Insert your OpenAI API Key here (dev/testing only!)
-  final String _apiKey = 'API S GOES HERE';
+  final String _apiKey = 'API KEY';
 
   Future<void> _sendMessage() async {
     final String userMessage = _controller.text.trim();
@@ -45,7 +45,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       body: jsonEncode({
         'model': 'gpt-3.5-turbo',
         'messages': [
-          {'role': 'system', 'content': 'You are a helpful assistant.'},
+          {
+          "role": "system",
+          "content": "You are a supportive AI assistant helping users quit smoking. Only answer questions related to smoking addiction, cravings, motivation, withdrawal symptoms, and mental support. If the user asks anything unrelated to smoking cessation, reply with: 'I'm here to support you in quitting smoking. Let's stay focused on that journey together.'",
+          },
           ..._messages,
           {'role': 'user', 'content': prompt},
         ],
@@ -55,7 +58,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
+      final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
       return data['choices'][0]['message']['content'].trim();
     } else {
       return 'Error: Unable to fetch response. Status code: ${response.statusCode}';

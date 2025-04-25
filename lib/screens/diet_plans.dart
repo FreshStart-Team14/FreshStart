@@ -20,24 +20,48 @@ class _DietPlansScreenState extends State<DietPlansScreen> {
   }
 
   Future<void> _calculateBMI() async {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  final userId = FirebaseAuth.instance.currentUser!.uid;
+  final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-    if (userDoc.exists) {
-      final weight = userDoc.data()?['weight'] as num?;
-      final height = userDoc.data()?['height'] as num?;
+  if (userDoc.exists) {
+    final weight = userDoc.data()?['weight'] as num?;
+    final height = userDoc.data()?['height'] as num?;
+    final storedDietPlan = userDoc.data()?['dietPlan'] as Map<String, dynamic>?;
 
-      if (weight != null && height != null) {
-        final heightInMeters = height / 100.0;
-        setState(() {
-          bmi = weight / (heightInMeters * heightInMeters);
-          bmiCategory = _getBMICategory(bmi!);
-        });
-        _fetchDietPlan();
+    if (weight != null && height != null) {
+      final heightInMeters = height / 100.0;
+      setState(() {
+        bmi = weight / (heightInMeters * heightInMeters);
+        bmiCategory = _getBMICategory(bmi!);
+        // Use stored diet plan if available, otherwise fetch a new one
+        dietPlan = storedDietPlan != null
+            ? storedDietPlan.map((key, value) => MapEntry(key, List<String>.from(value)))
+            : {};
+      });
+
+      if (dietPlan.isEmpty) {
+        _fetchAndStoreDietPlan();
       }
     }
   }
+}
+
+Future<void> _fetchAndStoreDietPlan() async {
+  final OpenAIService openAIService = OpenAIService();
+  final plan = await openAIService.getDietPlan(bmiCategory);
+
+  if (plan.isNotEmpty) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'dietPlan': plan,
+    });
+
+    setState(() {
+      dietPlan = plan;
+    });
+  }
+}
+
 
   Future<void> _fetchDietPlan() async{
     final OpenAIService openAIService = OpenAIService();
@@ -299,17 +323,22 @@ class _DietPlansScreenState extends State<DietPlansScreen> {
               color: Colors.black87,
             ),
           ),
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.restaurant_menu,
-              color: Colors.blueAccent,
-            ),
-          ),
+          ElevatedButton.icon(
+  onPressed: _fetchAndStoreDietPlan,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.blueAccent,
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  icon: Icon(Icons.refresh, color: Colors.white, size: 20),
+  label: Text(
+    "Change",
+    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+  ),
+)
+
         ],
       ),
     );

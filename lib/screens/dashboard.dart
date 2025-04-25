@@ -11,7 +11,8 @@ import 'package:freshstart/screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freshstart/screens/emotion_tracker/emotion_selection_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:freshstart/screens/community_screen.dart'; 
+import 'package:freshstart/screens/community_screen.dart';
+import 'package:freshstart/screens/freshagram.dart';
 
 class DashboardScreen extends StatelessWidget {
   @override
@@ -114,6 +115,8 @@ class DashboardScreen extends StatelessWidget {
                       Icons.track_changes),
                   _buildDashboardItem(context, 'FreshAI',
                       CommunityScreen(), Icons.people), 
+                  _buildDashboardItem(context, 'Freshagram', Freshagram(), Icons.chat_bubble),
+
                 ],
               ),
             ],
