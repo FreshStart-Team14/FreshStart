@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _apiKey = 'API KEY'; 
+  static const String _apiKey =
+      '';
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
   Future<Map<String, List<String>>> getDietPlan(String bmiCategory) async {
@@ -39,8 +40,8 @@ class OpenAIService {
       final content = data['choices'][0]['message']['content'];
 
       try {
-        return Map<String, List<String>>.from(
-            jsonDecode(content).map((key, value) => MapEntry(key, List<String>.from(value))));
+        return Map<String, List<String>>.from(jsonDecode(content)
+            .map((key, value) => MapEntry(key, List<String>.from(value))));
       } catch (e) {
         print("Error parsing diet plan: $e");
         return {};

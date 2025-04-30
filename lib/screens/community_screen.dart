@@ -13,7 +13,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isLoading = false;
 
   // 🚨 Insert your OpenAI API Key here (dev/testing only!)
-  final String _apiKey = 'API KEY';
+  final String _apiKey =
+      '';
 
   Future<void> _sendMessage() async {
     final String userMessage = _controller.text.trim();
@@ -46,8 +47,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
         'model': 'gpt-3.5-turbo',
         'messages': [
           {
-          "role": "system",
-          "content": "You are a supportive AI assistant helping users quit smoking. Only answer questions related to smoking addiction, cravings, motivation, withdrawal symptoms, and mental support. If the user asks anything unrelated to smoking cessation, reply with: 'I'm here to support you in quitting smoking. Let's stay focused on that journey together.'",
+            "role": "system",
+            "content":
+                "You are a supportive AI assistant helping users quit smoking. Only answer questions related to smoking addiction, cravings, motivation, withdrawal symptoms, and mental support. If the user asks anything unrelated to smoking cessation, reply with: 'I'm here to support you in quitting smoking. Let's stay focused on that journey together.'",
           },
           ..._messages,
           {'role': 'user', 'content': prompt},
@@ -58,7 +60,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
 
     if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
+      final Map<String, dynamic> data =
+          jsonDecode(utf8.decode(response.bodyBytes));
       return data['choices'][0]['message']['content'].trim();
     } else {
       return 'Error: Unable to fetch response. Status code: ${response.statusCode}';
@@ -68,88 +71,252 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
-          'Community Chat',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-          ),
-        ),
-        backgroundColor: Colors.blueAccent.shade700,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent.shade100, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.all(10.0),
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final message = _messages[index];
-                  final isUser = message['role'] == 'user';
-                  return Align(
-                    alignment:
-                        isUser ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 5.0),
-                      padding: EdgeInsets.all(10.0),
-                      decoration: BoxDecoration(
-                        color: isUser
-                            ? Colors.blueAccent.shade100
-                            : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      child: Text(
-                        message['content']!,
-                        style: TextStyle(fontSize: 16.0),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            Icon(
+              Icons.eco_rounded,
+              color: Colors.blue,
+              size: 28,
             ),
-            if (_isLoading)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CircularProgressIndicator(),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: 'Type your message...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                  SizedBox(width: 8.0),
-                  IconButton(
-                    icon: Icon(Icons.send),
-                    color: Colors.blueAccent.shade700,
-                    onPressed: _sendMessage,
-                  ),
-                ],
+            const SizedBox(width: 8),
+            Text(
+              'Community Chat',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
         ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_vert, color: Colors.blue),
+            onPressed: () {
+              // Add community settings or options here
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                // Watermark background
+                Positioned.fill(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.grey[100]!,
+                          Colors.grey[100]!.withOpacity(0.8),
+                          Colors.grey[100]!.withOpacity(0.6),
+                          Colors.grey[100]!.withOpacity(0.4),
+                        ],
+                        stops: const [0.0, 0.2, 0.4, 0.6],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.eco_rounded,
+                              size: 120,
+                              color: Colors.blue.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Community',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Messages
+                ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length + (_isLoading ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _messages.length && _isLoading) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.blue),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Thinking...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.blue[900],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final message = _messages[index];
+                    final isUser = message['role'] == 'user';
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        mainAxisAlignment: isUser
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
+                        children: [
+                          if (!isUser)
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.blue[100],
+                              child: Icon(
+                                Icons.eco_rounded,
+                                size: 20,
+                                color: Colors.blue[900],
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isUser ? Colors.blue : Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                message['content']!,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isUser ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          hintText: 'Type your message...',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: _sendMessage,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

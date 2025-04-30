@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; // Import intl package for date formatting
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 
 class WeightTrackerScreen extends StatefulWidget {
   //Dynamic class so that we used state
@@ -12,13 +13,27 @@ class WeightTrackerScreen extends StatefulWidget {
 }
 
 class _WeightTrackerScreenState extends State<WeightTrackerScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final TextEditingController _weightController =
       TextEditingController(); //User controller where user will enter the weight
   List<WeightEntry> _weightEntries = []; //To store the weight
   String? _firstWeightEntryId;
   late AnimationController _animationController;
   late Animation<double> _fadeInAnimation;
+  late AnimationController _progressAnimationController;
+  late Animation<double> _progressAnimation;
+  String dailyTip = '';
+  bool showMilestone = false;
+  String milestoneMessage = '';
+  bool _isProcessing = false;
+
+  final List<String> healthTips = [
+    "Small, consistent changes lead to big results!",
+    "Stay hydrated throughout the day!",
+    "Remember to celebrate your progress!",
+    "Your body is unique - focus on your journey!",
+    "Consistency is key to long-term success!",
+  ];
 
   @override
   void initState() {
@@ -26,7 +41,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _progressAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
     );
 
     _fadeInAnimation = Tween<double>(
@@ -37,13 +57,22 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       curve: Curves.easeInOut,
     ));
 
+    _progressAnimation = CurvedAnimation(
+      parent: _progressAnimationController,
+      curve: Curves.easeInOut,
+    );
+
     _fetchWeightHistory();
+    _setDailyTip();
     _animationController.forward();
+    _progressAnimationController.forward();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _progressAnimationController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -73,49 +102,91 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     });
   }
 
+  void _setDailyTip() {
+    final random = Random();
+    setState(() {
+      dailyTip = healthTips[random.nextInt(healthTips.length)];
+    });
+  }
+
+  void _checkMilestones(int weight) {
+    if (_weightEntries.isNotEmpty) {
+      final firstWeight = _weightEntries.last.weight;
+      final difference = firstWeight - weight;
+
+      if (difference >= 5) {
+        setState(() {
+          showMilestone = true;
+          milestoneMessage = '5kg Lost! Amazing Progress!';
+        });
+      } else if (difference >= 10) {
+        setState(() {
+          showMilestone = true;
+          milestoneMessage = '10kg Milestone Reached!';
+        });
+      }
+
+      if (showMilestone) {
+        Future.delayed(const Duration(seconds: 3), () {
+          setState(() => showMilestone = false);
+        });
+      }
+    }
+  }
+
   Future<void> _addWeight() async {
     if (_weightController.text.isEmpty) {
       _showErrorDialog('Please enter a weight.');
       return;
     }
 
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    int weight = int.parse(_weightController.text);
+    setState(() => _isProcessing = true);
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('weights')
-        .add({
-      'weight': weight,
-      'date': Timestamp.now(),
-    });
+    try {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      int weight = int.parse(_weightController.text);
 
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'weight': weight,
-    });
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('weights')
+          .add({
+        'weight': weight,
+        'date': Timestamp.now(),
+      });
 
-    _weightController.clear();
-    await _fetchWeightHistory();
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'weight': weight,
+      });
 
-    // Check weight change after adding new weight
-    if (_weightEntries.length > 1) {
-      double change = _weightEntries[0].weight.toDouble() -
-          _weightEntries[1].weight.toDouble();
+      _weightController.clear();
+      await _fetchWeightHistory();
 
-      if (change >= 2) {
-        // Significant weight gain (2kg or more)
-        _showWeightAlert(
-            'Weight Gain Alert',
-            'We noticed a significant increase in your weight. Would you like to check our personalized diet plans to help you get back on track?',
-            true);
-      } else if (change <= -1) {
-        // Weight loss (1kg or more)
-        _showWeightAlert(
-            'Congratulations! 🎉',
-            'Great job on your weight loss progress! Keep up the good work!',
-            false);
+      // Check weight change after adding new weight
+      if (_weightEntries.length > 1) {
+        double change = _weightEntries[0].weight.toDouble() -
+            _weightEntries[1].weight.toDouble();
+
+        if (change >= 2) {
+          // Significant weight gain (2kg or more)
+          _showWeightAlert(
+              'Weight Gain Alert',
+              'We noticed a significant increase in your weight. Would you like to check our personalized diet plans to help you get back on track?',
+              true);
+        } else if (change <= -1) {
+          // Weight loss (1kg or more)
+          _showWeightAlert(
+              'Congratulations! 🎉',
+              'Great job on your weight loss progress! Keep up the good work!',
+              false);
+        }
       }
+
+      _checkMilestones(weight);
+    } catch (e) {
+      _showErrorDialog('Error adding weight: $e');
+    } finally {
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -123,11 +194,11 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Error"),
+        title: const Text("Error"),
         content: Text(message),
         actions: [
           TextButton(
-            child: Text("OK"),
+            child: const Text("OK"),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -332,267 +403,315 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent.shade700, Colors.blueAccent.shade100],
-          ),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.monitor_weight,
+              color: Colors.blue,
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Weight Tracker',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 130.0,
-                floating: false,
-                pinned: true,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text(
-                    'Weight Tracker',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 22,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.blue),
+            onPressed: () {
+              _fetchWeightHistory();
+              _setDailyTip();
+            },
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildWeightInputCard(),
+                const SizedBox(height: 20),
+                _buildChartCard(),
+                const SizedBox(height: 20),
+                _buildHistoryCard(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+          if (showMilestone)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
                       color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.celebration,
+                          color: Colors.blue,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          milestoneMessage,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Keep up the great work!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  centerTitle: true,
                 ),
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    children: [
-                      // New Weight Input Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 20,
-                              offset: Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        padding: EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            TextField(
-                              controller: _weightController,
-                              decoration: InputDecoration(
-                                labelText: 'Enter Weight (kg)',
-                                labelStyle: TextStyle(color: Colors.white70),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: Colors.white.withOpacity(0.1),
-                                prefixIcon: Icon(Icons.monitor_weight_outlined,
-                                    color: Colors.white70),
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 16),
-                              ),
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                              keyboardType: TextInputType.number,
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _addWeight,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                minimumSize: Size(double.infinity, 50),
-                              ),
-                              child: Text(
-                                'Add Weight',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
+            ),
+        ],
+      ),
+    );
+  }
 
-                      // Chart Card
-                      Container(
-                        height: 280,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        padding: EdgeInsets.all(20),
-                        child: _buildChart(),
-                      ),
-                      SizedBox(height: 20),
-
-                      // Weight History Card
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.history, color: Colors.white),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    'Weight History',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              height: 300,
-                              child: ListView.builder(
-                                padding: EdgeInsets.symmetric(horizontal: 8),
-                                itemCount: _weightEntries.length,
-                                itemBuilder: (context, index) {
-                                  final entry = _weightEntries[index];
-                                  String formattedDate =
-                                      DateFormat('dd MMMM yyyy')
-                                          .format(entry.date);
-
-                                  String changeText = '';
-                                  if (index < _weightEntries.length - 1) {
-                                    double change = _weightEntries[index]
-                                            .weight
-                                            .toDouble() -
-                                        _weightEntries[index + 1]
-                                            .weight
-                                            .toDouble();
-                                    changeText =
-                                        '${change > 0 ? '+' : ''}$change kg';
-                                  }
-
-                                  return _buildAnimatedListItem(
-                                    Container(
-                                      margin: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      padding: EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                '${entry.weight} kg',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                formattedDate,
-                                                style: TextStyle(
-                                                  color: Colors.white70,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (changeText.isNotEmpty)
-                                            Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: 12, vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color:
-                                                    changeText.startsWith('+')
-                                                        ? Colors.red
-                                                            .withOpacity(0.2)
-                                                        : Colors.green
-                                                            .withOpacity(0.2),
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Text(
-                                                changeText,
-                                                style: TextStyle(
-                                                  color:
-                                                      changeText.startsWith('+')
-                                                          ? Colors.red[100]
-                                                          : Colors.green[100],
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    index,
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                    ],
+  Widget _buildWeightInputCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: _weightController,
+              decoration: InputDecoration(
+                labelText: 'Enter Weight (kg)',
+                labelStyle: TextStyle(color: Colors.grey.shade600),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                prefixIcon:
+                    Icon(Icons.monitor_weight_outlined, color: Colors.blue),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+              style: const TextStyle(color: Colors.black87, fontSize: 16),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isProcessing ? null : _addWeight,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Add Weight',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedButton(Widget child) {
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 1, end: 1),
-      duration: Duration(milliseconds: 200),
-      builder: (context, double value, child) {
-        return Transform.scale(
-          scale: value,
-          child: child,
-        );
-      },
-      child: child,
+  Widget _buildChartCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      height: 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: _buildChart(),
+    );
+  }
+
+  Widget _buildHistoryCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: [
+                Icon(Icons.history, color: Colors.blue),
+                const SizedBox(width: 12),
+                Text(
+                  'Weight History',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 300,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: _weightEntries.length,
+              itemBuilder: (context, index) {
+                final entry = _weightEntries[index];
+                String formattedDate =
+                    DateFormat('dd MMMM yyyy').format(entry.date);
+
+                String changeText = '';
+                if (index < _weightEntries.length - 1) {
+                  double change = _weightEntries[index].weight.toDouble() -
+                      _weightEntries[index + 1].weight.toDouble();
+                  changeText = '${change > 0 ? '+' : ''}$change kg';
+                }
+
+                return _buildAnimatedListItem(
+                  Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${entry.weight} kg',
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              formattedDate,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (changeText.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: changeText.startsWith('+')
+                                  ? Colors.red.withOpacity(0.1)
+                                  : Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              changeText,
+                              style: TextStyle(
+                                color: changeText.startsWith('+')
+                                    ? Colors.red
+                                    : Colors.green,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  index,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -602,7 +721,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       builder: (context, child) {
         return SlideTransition(
           position: Tween<Offset>(
-            begin: Offset(0.5, 0),
+            begin: const Offset(0.5, 0),
             end: Offset.zero,
           ).animate(CurvedAnimation(
             parent: _animationController,

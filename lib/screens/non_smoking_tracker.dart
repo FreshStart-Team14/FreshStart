@@ -219,12 +219,12 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
           scale: _scaleAnimation.value,
           child: Container(
             width: double.infinity,
-            margin: EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             height: 55,
             child: ElevatedButton(
               onPressed: _saveNonSmokingDay,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
                 elevation: _isProcessing ? 2 : 4,
                 shape: RoundedRectangleBorder(
@@ -235,21 +235,21 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
                 alignment: Alignment.center,
                 children: [
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 200),
                     opacity: _isProcessing ? 0 : 1,
                     child: Text(
                       'Add Non-Smoked Day',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
                     ),
                   ),
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 200),
                     opacity: _isProcessing ? 1 : 0,
-                    child: SizedBox(
+                    child: const SizedBox(
                       height: 24,
                       width: 24,
                       child: CircularProgressIndicator(
@@ -269,20 +269,16 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
 
   Widget _buildStatsCard() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 16),
-      padding: EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue.shade800, Colors.blue.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -298,7 +294,10 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
                 color: Colors.orange,
               ),
               Container(
-                  height: 40, width: 1, color: Colors.white.withOpacity(0.3)),
+                height: 40,
+                width: 1,
+                color: Colors.grey.shade300,
+              ),
               _buildStatItem(
                 icon: Icons.star,
                 label: 'Level',
@@ -307,12 +306,12 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
               ),
             ],
           ),
-          Divider(color: Colors.white.withOpacity(0.3), height: 30),
+          const Divider(height: 30),
           _buildStatItem(
             icon: Icons.emoji_events,
             label: 'Total XP',
             value: '$_totalXP XP',
-            color: Colors.greenAccent,
+            color: Colors.green,
             isLarge: true,
           ),
         ],
@@ -330,20 +329,20 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
     return Column(
       children: [
         Icon(icon, color: color, size: isLarge ? 32 : 24),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.grey.shade600,
             fontSize: isLarge ? 16 : 14,
           ),
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isLarge ? 24 : 20,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -358,9 +357,9 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -397,9 +396,9 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
           headerStyle: HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,
-            titleTextStyle: TextStyle(
+            titleTextStyle: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -409,26 +408,27 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
 
   Widget _buildResetButton() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: TextButton.icon(
         onPressed: () {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text('Reset Progress'),
-              content: Text(
+              title: const Text('Reset Progress'),
+              content: const Text(
                   'Are you sure you want to reset all your progress? This action cannot be undone.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel'),
+                  child: const Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () {
                     _resetData();
                     Navigator.pop(context);
                   },
-                  child: Text('Reset', style: TextStyle(color: Colors.red)),
+                  child:
+                      const Text('Reset', style: TextStyle(color: Colors.red)),
                 ),
               ],
             ),
@@ -446,31 +446,55 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F6FA),
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
-          'Non-Smoking Tracker',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.smoke_free,
+              color: Colors.blue,
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Non-Smoking Tracker',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           child: Column(
             children: [
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade800,
-                  borderRadius: BorderRadius.only(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: _buildStatsCard(),
               ),
@@ -479,9 +503,9 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     _buildCalendarCard(),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     _buildAnimatedButton(),
                     _buildResetButton(),
                   ],

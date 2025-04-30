@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freshstart/src/services/openai_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DietPlansScreen extends StatefulWidget {
   @override
@@ -20,50 +21,52 @@ class _DietPlansScreenState extends State<DietPlansScreen> {
   }
 
   Future<void> _calculateBMI() async {
-  final userId = FirebaseAuth.instance.currentUser!.uid;
-  final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
-  if (userDoc.exists) {
-    final weight = userDoc.data()?['weight'] as num?;
-    final height = userDoc.data()?['height'] as num?;
-    final storedDietPlan = userDoc.data()?['dietPlan'] as Map<String, dynamic>?;
+    if (userDoc.exists) {
+      final weight = userDoc.data()?['weight'] as num?;
+      final height = userDoc.data()?['height'] as num?;
+      final storedDietPlan =
+          userDoc.data()?['dietPlan'] as Map<String, dynamic>?;
 
-    if (weight != null && height != null) {
-      final heightInMeters = height / 100.0;
-      setState(() {
-        bmi = weight / (heightInMeters * heightInMeters);
-        bmiCategory = _getBMICategory(bmi!);
-        // Use stored diet plan if available, otherwise fetch a new one
-        dietPlan = storedDietPlan != null
-            ? storedDietPlan.map((key, value) => MapEntry(key, List<String>.from(value)))
-            : {};
-      });
+      if (weight != null && height != null) {
+        final heightInMeters = height / 100.0;
+        setState(() {
+          bmi = weight / (heightInMeters * heightInMeters);
+          bmiCategory = _getBMICategory(bmi!);
+          // Use stored diet plan if available, otherwise fetch a new one
+          dietPlan = storedDietPlan != null
+              ? storedDietPlan
+                  .map((key, value) => MapEntry(key, List<String>.from(value)))
+              : {};
+        });
 
-      if (dietPlan.isEmpty) {
-        _fetchAndStoreDietPlan();
+        if (dietPlan.isEmpty) {
+          _fetchAndStoreDietPlan();
+        }
       }
     }
   }
-}
 
-Future<void> _fetchAndStoreDietPlan() async {
-  final OpenAIService openAIService = OpenAIService();
-  final plan = await openAIService.getDietPlan(bmiCategory);
+  Future<void> _fetchAndStoreDietPlan() async {
+    final OpenAIService openAIService = OpenAIService();
+    final plan = await openAIService.getDietPlan(bmiCategory);
 
-  if (plan.isNotEmpty) {
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({
-      'dietPlan': plan,
-    });
+    if (plan.isNotEmpty) {
+      final userId = FirebaseAuth.instance.currentUser!.uid;
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'dietPlan': plan,
+      });
 
-    setState(() {
-      dietPlan = plan;
-    });
+      setState(() {
+        dietPlan = plan;
+      });
+    }
   }
-}
 
-
-  Future<void> _fetchDietPlan() async{
+  Future<void> _fetchDietPlan() async {
     final OpenAIService openAIService = OpenAIService();
     final plan = await openAIService.getDietPlan(bmiCategory);
 
@@ -201,91 +204,181 @@ Future<void> _fetchAndStoreDietPlan() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text('Nutrition Blueprint',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 24)),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu,
+              color: Colors.blue,
+              size: 28,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Nutrition',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Text(
+              'Plan',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: TextButton.icon(
+              onPressed: _fetchAndStoreDietPlan,
+              icon: Icon(Icons.refresh, color: Colors.blue, size: 20),
+              label: Text(
+                'Change Plan',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blue.withOpacity(0.1),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: bmi == null
           ? Center(
               child: CircularProgressIndicator(
-                color: Colors.blueAccent,
+                color: Colors.blue,
                 strokeWidth: 3,
               ),
             )
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.blueAccent.withOpacity(0.1), Colors.white],
-                  stops: [0.0, 0.3],
+          : Stack(
+              children: [
+                // Watermark background
+                Positioned.fill(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.grey[100]!,
+                          Colors.grey[100]!.withOpacity(0.8),
+                          Colors.grey[100]!.withOpacity(0.6),
+                          Colors.grey[100]!.withOpacity(0.4),
+                        ],
+                        stops: const [0.0, 0.2, 0.4, 0.6],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.restaurant_menu,
+                              size: 120,
+                              color: Colors.blue.withOpacity(0.3),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'NutritionPlan',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildBMICard(),
-                    SizedBox(height: 24),
-                    _buildDietPlanHeader(),
-                    SizedBox(height: 16),
-                    ...dietPlan.entries.map(
-                        (entry) => _buildMealSection(entry.key, entry.value)),
-                  ],
+                SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBMICard(),
+                      SizedBox(height: 24),
+                      ...dietPlan.entries.map(
+                          (entry) => _buildMealSection(entry.key, entry.value)),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
     );
   }
 
   Widget _buildBMICard() {
-    Color categoryColor = _getBMICategoryColor(bmiCategory);
+    Color bmiColor = _getBMICategoryColor(bmiCategory);
     return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
-          colors: [Colors.blueAccent, categoryColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            bmiColor,
+            bmiColor.withOpacity(0.8),
+          ],
         ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 15,
-            offset: Offset(0, 5),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      padding: EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Your BMI',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Your BMI',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    bmi!.toStringAsFixed(1),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              Text(
+                bmi!.toStringAsFixed(1),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -309,79 +402,45 @@ Future<void> _fetchAndStoreDietPlan() async {
     );
   }
 
-  Widget _buildDietPlanHeader() {
-    return Container(
-      margin: EdgeInsets.only(top: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Daily Nutrition Plan',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          ElevatedButton.icon(
-  onPressed: _fetchAndStoreDietPlan,
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.blueAccent,
-    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  ),
-  icon: Icon(Icons.refresh, color: Colors.white, size: 20),
-  label: Text(
-    "Change",
-    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-  ),
-)
-
-        ],
-      ),
-    );
-  }
-
   Widget _buildMealSection(String mealTime, List<String> foods) {
     return Container(
-      margin: EdgeInsets.only(bottom: 20),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         children: [
-          Container(
+          Padding(
             padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.1),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
             child: Row(
               children: [
-                Icon(
-                  _getMealIcon(mealTime),
-                  color: Colors.blueAccent,
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _getMealIcon(mealTime),
+                    color: Colors.blue,
+                    size: 24,
+                  ),
                 ),
                 SizedBox(width: 12),
                 Text(
                   mealTime,
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue[900],
                   ),
                 ),
               ],
@@ -407,15 +466,15 @@ Future<void> _fetchAndStoreDietPlan() async {
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(8),
+                      padding: EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.1),
+                        color: Colors.blue.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.check,
-                        size: 16,
-                        color: Colors.blueAccent,
+                        size: 14,
+                        color: Colors.blue,
                       ),
                     ),
                     SizedBox(width: 12),
@@ -464,7 +523,7 @@ Future<void> _fetchAndStoreDietPlan() async {
       case 'Obese':
         return Colors.red;
       default:
-        return Colors.blueAccent;
+        return Colors.blue;
     }
   }
 }

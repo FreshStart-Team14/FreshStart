@@ -16,6 +16,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   int _cigarettesPerDay = 0; // User's default daily consumption
   Map<String, int> _dailySmokingCounts = {};
   DateTime _lastUpdated = DateTime.now();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -144,13 +145,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
       // Blend from green to yellow
       return Color.lerp(
         Colors.green,
-        Colors.yellow,
+        Colors.orange,
         progress * 2,
       )!;
     } else {
       // Blend from yellow to red
       return Color.lerp(
-        Colors.yellow,
+        Colors.orange,
         Colors.red,
         (progress - 0.5) * 2,
       )!;
@@ -166,66 +167,99 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }) {
     final isFailed = current > goal;
     final progressColor = _getProgressColor(current, goal);
+    final remaining = goal - current;
 
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(15),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  Icon(
-                    current == 0
-                        ? Icons.check_circle
-                        : (isFailed ? Icons.cancel : Icons.smoking_rooms),
-                    color: progressColor,
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: progressColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            current == 0
+                                ? Icons.check_circle
+                                : (isFailed
+                                    ? Icons.warning
+                                    : Icons.smoking_rooms),
+                            color: progressColor,
+                            size: 16,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            current == 0
+                                ? 'Perfect!'
+                                : isFailed
+                                    ? 'Exceeded'
+                                    : '$remaining left',
+                            style: TextStyle(
+                              color: progressColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: (current / goal).clamp(0.0, 1.0),
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation(progressColor),
-              ),
-              SizedBox(height: 8),
-              Text(
-                current == 0
-                    ? 'Perfect! No cigarettes smoked'
-                    : isFailed
-                        ? 'Challenge failed! Smoked ${current - goal} too many'
-                        : '${goal - current} cigarettes remaining until failure',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: progressColor,
+                SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (current / goal).clamp(0.0, 1.0),
+                    backgroundColor: Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation(progressColor),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -244,7 +278,16 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit ${isDaily ? "Daily" : "Weekly"} Goal'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: Text(
+          'Edit ${isDaily ? "Daily" : "Weekly"} Goal',
+          style: TextStyle(
+            color: Colors.blue,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +312,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Target cigarettes',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.blue, width: 2),
+                ),
               ),
             ),
           ],
@@ -277,7 +326,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -294,7 +346,13 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 Navigator.pop(context);
               }
             },
-            child: Text('Save'),
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -307,80 +365,113 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     final weekSmoked = _getWeekSmoked();
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text('Challenges'),
-        backgroundColor: Colors.blueAccent.shade700,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent.shade700, Colors.blueAccent.shade100],
-          ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.emoji_events, color: Colors.blue, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Challenges',
+              style: TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your Active Challenges',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.blue),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                physics: BouncingScrollPhysics(),
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildChallengeCard(
+                      title: 'Daily Challenge',
+                      subtitle: 'Smoke less than $_dailyGoal cigarettes today',
+                      current: todaySmoked,
+                      goal: _dailyGoal,
+                      onTap: () => _showEditGoalDialog(true),
+                    ),
+                    _buildChallengeCard(
+                      title: 'Weekly Challenge',
+                      subtitle:
+                          'Smoke less than $_weeklyGoal cigarettes this week',
+                      current: weekSmoked,
+                      goal: _weeklyGoal,
+                      onTap: () => _showEditGoalDialog(false),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
-              _buildChallengeCard(
-                title: 'Daily Challenge',
-                subtitle: 'Smoke less than $_dailyGoal cigarettes today',
-                current: todaySmoked,
-                goal: _dailyGoal,
-                onTap: () => _showEditGoalDialog(true),
+            ),
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              _buildChallengeCard(
-                title: 'Weekly Challenge',
-                subtitle: 'Smoke less than $_weeklyGoal cigarettes this week',
-                current: weekSmoked,
-                goal: _weeklyGoal,
-                onTap: () => _showEditGoalDialog(false),
-              ),
-              Spacer(),
-              Container(
+              child: SizedBox(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 child: ElevatedButton(
-                  onPressed: _recordSmoke,
+                  onPressed: _isLoading ? null : _recordSmoke,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue.shade900,
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    elevation: 4,
+                    elevation: 0,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.smoking_rooms),
-                      SizedBox(width: 8),
-                      Text(
-                        'I Smoked a Cigarette',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  child: _isLoading
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.smoking_rooms),
+                            SizedBox(width: 8),
+                            Text(
+                              'Record Cigarette',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
