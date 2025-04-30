@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freshstart/screens/avatars.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -151,6 +152,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     int age = _calculateAge(_dateOfBirth);
+    ElevatedButton.icon(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AvatarsScreen()),
+    );
+  },
+  icon: Icon(Icons.image, color: Colors.white),
+  label: Text(
+    'Avatars & Skins',
+    style: TextStyle(color: Colors.white),
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white24,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  ),
+);
+SizedBox(height: 16);
 
     return Scaffold(
       backgroundColor: Colors.blueAccent.shade700,
@@ -198,9 +218,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildEditableStat('Pack Price', '\$$_packPrice', () => _editField('packPrice')),
             _buildEditableStat('Age', '$age years', () => _editField('dob')),
             SizedBox(height: 20),
-            _buildInfoRow('Gender', _gender, Icons.person_rounded),
-            SizedBox(height: 16),
-            _buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
+ElevatedButton.icon(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AvatarsScreen()),
+    );
+  },
+  icon: Icon(Icons.image, color: Colors.white),
+  label: Text(
+    'Avatars & Skins',
+    style: TextStyle(color: Colors.white),
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white24,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  ),
+),
+SizedBox(height: 16),
+_buildInfoRow('Gender', _gender, Icons.person_rounded),
+SizedBox(height: 16),
+_buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
+
           ],
         ),
       ),

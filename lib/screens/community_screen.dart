@@ -13,7 +13,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isLoading = false;
 
   // 🚨 Insert your OpenAI API Key here (dev/testing only!)
-  final String _apiKey = 'API KEY';
+  final String _apiKey = 'API GOES HERE';
 
   Future<void> _sendMessage() async {
     final String userMessage = _controller.text.trim();

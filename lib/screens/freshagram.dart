@@ -61,62 +61,86 @@ class _FreshagramState extends State<Freshagram> {
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-              .collection('group_messages')
-              .orderBy('timestamp')
-              .snapshots(),
-      builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Center(child: Text('Error: ${snapshot.error}'));
-      }
-      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-        return const Center(child: Text('No messages yet. Say hello!'));
-      }
+  child: Stack(
+    children: [
+      // Background icon
+      Positioned.fill(
+        child: Opacity(
+          opacity: 0.07, // very low opacity
+          child: Icon(
+            Icons.eco_rounded,
+            size: 300,
+            color: Colors.green.shade300,
+          ),
+        ),
+      ),
+      // Chat messages on top
+      StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('group_messages')
+            .orderBy('timestamp')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No messages yet. Say hello!'));
+          }
 
-      final messages = snapshot.data!.docs;
+          final messages = snapshot.data!.docs;
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(10),
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final msg = messages[index];
-          final isCurrentUser = msg['sender'] == _username;
+          return ListView.builder(
+            padding: const EdgeInsets.all(10),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final msg = messages[index];
+              final isCurrentUser = msg['sender'] == _username;
 
-          return Align(
-            alignment:
-                isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 5),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isCurrentUser
-                    ? Colors.green.shade200
-                    : Colors.green.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(msg['sender']!,
-                      style: TextStyle(
+              return Align(
+                alignment: isCurrentUser
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 5),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isCurrentUser
+                        ? Colors.green.shade200
+                        : Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        msg['sender']!,
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: Colors.green.shade900)),
-                  const SizedBox(height: 4),
-                  Text(msg['sender']!, style: const TextStyle(fontSize: 16)),
-                ],
-              ),
-            ),
+                          color: Colors.green.shade900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        msg['message']!,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         },
-      );
-    },
+      ),
+    ],
   ),
 ),
+
 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),

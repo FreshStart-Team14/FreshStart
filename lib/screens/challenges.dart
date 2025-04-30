@@ -11,6 +11,8 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
+  bool hasCompletedDaily = false;
+  bool hasCompletedWeekly = false;
   int _dailyGoal = 10;
   int _weeklyGoal = 50;
   int _cigarettesPerDay = 0; // User's default daily consumption
@@ -64,6 +66,37 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         SnackBar(
             content: Text('Error loading challenge data. Please try again.')),
       );
+    }
+  }
+
+  Future<void> _addXP(int xp) async{
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists){
+        int currentXP = userDoc.data()?['totalXP'] ?? 0;
+        int newLevel = calculateLevel((currentXP + xp));
+        await _firestore.collection('users').doc(userId).update({
+          'totalXP': currentXP + xp,
+          'level': newLevel,
+        });
+      }
+    } catch (e){
+      print('Error adding XP: $e');
+    }
+  }
+  Future<void> _removeXP(int xp) async{
+    try{
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists){
+        int currentXP = userDoc.data()?['totalXP'] ?? 0;
+        int newLevel = calculateLevel((currentXP - xp));
+        await _firestore.collection('users').doc(userId).update({
+          'totalXP': (currentXP - xp).clamp(0, double. infinity),
+          'level': newLevel,
+        });
+      }
+    }catch(e){
+      print('Error removing XP: $e');
     }
   }
 
@@ -131,6 +164,11 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     return total;
   }
 
+  int calculateLevel(int totalXP) {
+  return (totalXP / 100).floor().clamp(1, 15);
+}
+
+
   // Helper method to get color based on progress
   Color _getProgressColor(int current, int goal) {
     if (current == 0) return Colors.green;
@@ -158,79 +196,59 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   Widget _buildChallengeCard({
-    required String title,
-    required String subtitle,
-    required int current,
-    required int goal,
-    required VoidCallback onTap,
-  }) {
-    final isFailed = current > goal;
-    final progressColor = _getProgressColor(current, goal);
+  required String title,
+  required String subtitle,
+  required int current,
+  required int goal,
+  required VoidCallback onComplete,
+  required VoidCallback onUndo,
+  bool isCompleted = false,
+}) {
+  final progressColor = _getProgressColor(current, goal);
 
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  return Card(
+    elevation: 8,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    child: Padding(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text(subtitle, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+          SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: (current / goal).clamp(0.0, 1.0),
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation(progressColor),
+          ),
+          SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Icon(
-                    current == 0
-                        ? Icons.check_circle
-                        : (isFailed ? Icons.cancel : Icons.smoking_rooms),
-                    color: progressColor,
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+              ElevatedButton(
+                onPressed: isCompleted ? null : onComplete, // Disable if already completed
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isCompleted ? Colors.grey : Colors.green,
+                  foregroundColor: Colors.white,
                 ),
+                child: Text(isCompleted ? "Completed" : "I Completed the Challenge"),
               ),
-              SizedBox(height: 16),
-              LinearProgressIndicator(
-                value: (current / goal).clamp(0.0, 1.0),
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation(progressColor),
-              ),
-              SizedBox(height: 8),
-              Text(
-                current == 0
-                    ? 'Perfect! No cigarettes smoked'
-                    : isFailed
-                        ? 'Challenge failed! Smoked ${current - goal} too many'
-                        : '${goal - current} cigarettes remaining until failure',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: progressColor,
+              if (isCompleted) // Show Undo button only if completed
+                TextButton(
+                  onPressed: onUndo,
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: Text("Undo"),
                 ),
-              ),
             ],
           ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   void _showEditGoalDialog(bool isDaily) {
     final defaultGoal = isDaily
@@ -302,87 +320,104 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final todaySmoked = _getTodaySmoked();
-    final weekSmoked = _getWeekSmoked();
+Widget build(BuildContext context) {
+  final todaySmoked = _getTodaySmoked();
+  final weekSmoked = _getWeekSmoked();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Challenges'),
-        backgroundColor: Colors.blueAccent.shade700,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blueAccent.shade700, Colors.blueAccent.shade100],
-          ),
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Challenges'),
+      backgroundColor: Colors.blueAccent.shade700,
+    ),
+    body: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blueAccent.shade700, Colors.blueAccent.shade100],
         ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Your Active Challenges',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your Active Challenges',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
-              SizedBox(height: 20),
-              _buildChallengeCard(
-                title: 'Daily Challenge',
-                subtitle: 'Smoke less than $_dailyGoal cigarettes today',
-                current: todaySmoked,
-                goal: _dailyGoal,
-                onTap: () => _showEditGoalDialog(true),
-              ),
-              SizedBox(height: 16),
-              _buildChallengeCard(
-                title: 'Weekly Challenge',
-                subtitle: 'Smoke less than $_weeklyGoal cigarettes this week',
-                current: weekSmoked,
-                goal: _weeklyGoal,
-                onTap: () => _showEditGoalDialog(false),
-              ),
-              Spacer(),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                child: ElevatedButton(
-                  onPressed: _recordSmoke,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.blue.shade900,
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 4,
+            ),
+            SizedBox(height: 20),
+            _buildChallengeCard(
+              title: 'Daily Challenge',
+              subtitle: 'Smoke less than $_dailyGoal cigarettes today',
+              current: todaySmoked,
+              goal: _dailyGoal,
+              isCompleted: hasCompletedDaily,
+              onComplete: () {
+                setState(() => hasCompletedDaily = true);
+                _addXP(10);
+              },
+              onUndo: () {
+                setState(() => hasCompletedDaily = false);
+                _removeXP(10);
+              },
+            ),
+            SizedBox(height: 16),
+            _buildChallengeCard(
+              title: 'Weekly Challenge',
+              subtitle: 'Smoke less than $_weeklyGoal cigarettes this week',
+              current: weekSmoked,
+              goal: _weeklyGoal,
+              isCompleted: hasCompletedWeekly,
+              onComplete: () {
+                setState(() => hasCompletedWeekly = true);
+                _addXP(25);
+              },
+              onUndo: () {
+                setState(() => hasCompletedWeekly = false);
+                _removeXP(25);
+              },
+            ),
+            Spacer(),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: ElevatedButton(
+                onPressed: _recordSmoke,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue.shade900,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.smoking_rooms),
-                      SizedBox(width: 8),
-                      Text(
-                        'I Smoked a Cigarette',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  elevation: 4,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.smoking_rooms),
+                    SizedBox(width: 8),
+                    Text(
+                      'I Smoked a Cigarette',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

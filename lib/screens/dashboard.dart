@@ -13,10 +13,46 @@ import 'package:freshstart/screens/emotion_tracker/emotion_selection_screen.dart
 import 'package:google_fonts/google_fonts.dart';
 import 'package:freshstart/screens/community_screen.dart';
 import 'package:freshstart/screens/freshagram.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return Scaffold(body: Center(child: Text("Error loading dashboard.")));
+        }
+
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+        final level = data['level'] ?? 1;
+
+        if (level == 15) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Fluttertoast.showToast(
+              msg: "🎉 Congratulations! You’ve reached the MAX level!",
+              toastLength: Toast.LENGTH_LONG,
+              gravity: ToastGravity.BOTTOM,
+              backgroundColor: Colors.green.shade700,
+              textColor: Colors.white,
+            );
+          });
+        }
+
+        return _buildDashboardContent(context);
+      },
+    );
+  }
+
+  Widget _buildDashboardContent(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -114,9 +150,8 @@ class DashboardScreen extends StatelessWidget {
                   _buildDashboardItem(context, 'Challenges', ChallengesScreen(),
                       Icons.track_changes),
                   _buildDashboardItem(context, 'FreshAI',
-                      CommunityScreen(), Icons.people), 
+                      CommunityScreen(), Icons.people),
                   _buildDashboardItem(context, 'Freshagram', Freshagram(), Icons.chat_bubble),
-
                 ],
               ),
             ],
