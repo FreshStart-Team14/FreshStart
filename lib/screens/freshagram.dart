@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:typed_data';
 
 class Freshagram extends StatefulWidget {
   @override
@@ -11,6 +14,7 @@ class _FreshagramState extends State<Freshagram> {
   final TextEditingController _messageController = TextEditingController();
   late final User _currentUser;
   String? _username;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -18,6 +22,57 @@ class _FreshagramState extends State<Freshagram> {
     _currentUser = FirebaseAuth.instance.currentUser!;
     _loadUsername();
   }
+  Future<void> _sendImage() async{
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    try{
+      final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+    final ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
+    await ref.putData(await image.readAsBytes());
+
+    final imageUrl = await ref.getDownloadURL();
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
+    final avatar = userDoc.data()?['selectedAvatar'];
+
+    await FirebaseFirestore.instance.collection('group_messages').add({
+      'sender': _username!,
+      'imageUrl': imageUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+      'avatar': avatar,
+    });
+    }catch (e) {
+    print('Error sending image: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to send image. Please try again')),
+    );
+  }
+  }
+  Future<void> _takePhoto() async {
+  final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+  if (photo == null) return;
+
+  try {
+    final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+    final ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
+    await ref.putData(await photo.readAsBytes());
+
+    final imageUrl = await ref.getDownloadURL();
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
+    final avatar = userDoc.data()?['selectedAvatar'];
+
+    await FirebaseFirestore.instance.collection('group_messages').add({
+      'sender': _username!,
+      'imageUrl': imageUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+      'avatar': avatar,
+    });
+  } catch (e) {
+    print('Error taking photo: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to send photo. Please try again')),
+    );
+  }
+}
 
   Future<void> _loadUsername() async {
     final doc = await FirebaseFirestore.instance
@@ -39,7 +94,7 @@ class _FreshagramState extends State<Freshagram> {
     try {
       await FirebaseFirestore.instance.collection('group_messages').add({
         'sender': _username!,
-        'message': message,
+        'message': message, 
         'timestamp': FieldValue.serverTimestamp(),
         'avatar': avatar,
       });
@@ -165,85 +220,90 @@ class _FreshagramState extends State<Freshagram> {
                       padding: const EdgeInsets.all(16),
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
+
                         final msg = messages[index];
                         final isCurrentUser = msg['sender'] == _username;
-
+                        final data = msg.data() as Map<String, dynamic>?;
                         return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            mainAxisAlignment: isCurrentUser
-                                ? MainAxisAlignment.end
-                                : MainAxisAlignment.start,
-                            children: [
-                              if (!isCurrentUser)
-  CircleAvatar(
-    radius: 20,
-    backgroundColor: Colors.blue[100],
-    backgroundImage: msg['avatar'] != null
-        ? AssetImage(msg['avatar']) as ImageProvider
-        : null,
-    child: msg['avatar'] == null
-        ? Text(
-            msg['sender']![0].toUpperCase(),
-            style: TextStyle(
-              color: Colors.blue[900],
-              fontWeight: FontWeight.bold,
-            ),
-          )
-        : null,
-  ),
-
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 10,
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Row(
+                        mainAxisAlignment: isCurrentUser
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
+                          children: [
+                            if (!isCurrentUser)
+                              CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.blue[100],
+                              backgroundImage: msg['avatar'] != null
+                                ? AssetImage(msg['avatar']) as ImageProvider
+                                : null,
+                                child: msg['avatar'] == null
+                                ? Text(
+                                  msg['sender']![0].toUpperCase(),
+                                  style: TextStyle(
+                                  color: Colors.blue[900],
+                                  fontWeight: FontWeight.bold,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: isCurrentUser
-                                        ? Colors.blue
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (!isCurrentUser)
-                                        Text(
-                                          msg['sender']!,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: Colors.blue[900],
-                                          ),
-                                        ),
-                                      if (!isCurrentUser)
-                                        const SizedBox(height: 4),
-                                      Text(
-                                        msg['message']!,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: isCurrentUser
-                                              ? Colors.white
-                                              : Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                )
+                                : null,
                               ),
-                            ],
-                          ),
-                        );
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isCurrentUser ? Colors.blue : Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isCurrentUser)
+                Text(
+                  msg['sender']!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.blue[900],
+                  ),
+                ),
+                
+              if (!isCurrentUser) const SizedBox(height: 4),
+              if (data != null && data.containsKey('imageUrl') && data['imageUrl'] != null)
+
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    msg['imageUrl'],
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              if (msg['message'] != null && msg['message'].toString().isNotEmpty)
+                Text(
+                  msg['message']!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isCurrentUser ? Colors.white : Colors.black87,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  ),
+);
+
                       },
                     );
                   },
@@ -289,6 +349,27 @@ class _FreshagramState extends State<Freshagram> {
                   const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.image, color: Colors.blue),
+                      onPressed: _sendImage,
+                    ),
+                  ),
+                  Container(
+  decoration: BoxDecoration(
+    color: Colors.grey[300],
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: IconButton(
+    icon: const Icon(Icons.camera_alt, color: Colors.blue),
+    onPressed: _takePhoto,
+  ),
+),
+const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -296,6 +377,7 @@ class _FreshagramState extends State<Freshagram> {
                       icon: const Icon(Icons.send, color: Colors.white),
                       onPressed: _sendMessage,
                     ),
+                    
                   ),
                 ],
               ),

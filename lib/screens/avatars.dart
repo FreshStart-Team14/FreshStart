@@ -12,42 +12,42 @@ class _AvatarsScreenState extends State<AvatarsScreen> {
   int userLevel = 1;
   String? selectedAvatar;
 
-  final List<String> allAvatars = [
-  'black_fedora_skeleton.jpg',
-  'blue_fedora_skeleton.jpg',
-  'blue_hat_red_glass_unhealthy_male.jpg',
-  'brown_fedora_unhealthy_male.jpg',
-  'chicken_hat_skeleton.jpg',
-  'chicken_hat_unhealthy_male.jpg',
-  'eyeliner_skeleton.jpg',
-  'floral_skeleton.jpg',
-  'golden_tooth_skeleton.jpg',
-  'green_fedora_skeleton.jpg',
-  'green_hat_skeleton.jpg',
-  'green_hat_unhealthy_male.jpg',
-  'hat_skeleton.png',
-  'horse_head_skeleton.jpg',
-  'horse_head_unhealthy_male.jpg',
-  'pink_hat_skeleton.jpg',
-  'red_glass_brown_fedora_unhealthy_male.jpg',
-  'red_glass_skeleton.jpg',
-  'red_glass_unhealthy_male.jpg',
-  'skeleton.png',
-  'sunglasses_skeleton.png',
-  'unhealthy_female.png',
-  'unhealthy_male.png',
-  'wizard_skeleton.png',
-];
 
+  final List<String> allAvatars = [
+    'black_fedora_skeleton.jpg',
+    'blue_fedora_skeleton.jpg',
+    'blue_hat_red_glass_unhealthy_male.jpg',
+    'brown_fedora_unhealthy_male.jpg',
+    'chicken_hat_skeleton.jpg',
+    'chicken_hat_unhealthy_male.jpg',
+    'eyeliner_skeleton.jpg',
+    'floral_skeleton.jpg',
+    'golden_tooth_skeleton.jpg',
+    'green_fedora_skeleton.jpg',
+    'green_hat_skeleton.jpg',
+    'green_hat_unhealthy_male.jpg',
+    'hat_skeleton.png',
+    'horse_head_skeleton.jpg',
+    'horse_head_unhealthy_male.jpg',
+    'pink_hat_skeleton.jpg',
+    'red_glass_brown_fedora_unhealthy_male.jpg',
+    'red_glass_skeleton.jpg',
+    'red_glass_unhealthy_male.jpg',
+    'skeleton.png',
+    'sunglasses_skeleton.png',
+    'unhealthy_female.png',
+    'unhealthy_male.png',
+    'wizard_skeleton.png',
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-
   Future<void> _loadUserData() async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (doc.exists) {
       final data = doc.data()!;
       setState(() {
@@ -83,73 +83,207 @@ class _AvatarsScreenState extends State<AvatarsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text("Choose Your Avatar"),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: GridView.builder(
-          itemCount: allAvatars.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+        title: Text(
+          "Choose Your Avatar",
+          style: TextStyle(
+            color: Colors.blue[700],
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
-          itemBuilder: (context, index) {
-            final fileName = allAvatars[index];
-            final isAvailable = _isAvatarAvailable(fileName);
-            final isSelected = selectedAvatar == 'assets/avatars/$fileName';
-
-            return GestureDetector(
-              onTap: isAvailable ? () => _selectAvatar(fileName) : null,
-              child: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? Colors.green : Colors.transparent,
-                        width: 3,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: AspectRatio(
-  aspectRatio: 1, // forces square tiles
-  child: ClipRRect(
-    borderRadius: BorderRadius.circular(12),
-    child: ColorFiltered(
-      colorFilter: isAvailable
-          ? ColorFilter.mode(Colors.transparent, BlendMode.multiply)
-          : ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
-      child: Image.asset(
-        'assets/avatars/$fileName',
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          debugPrint('❌ Failed to load: $fileName');
-          return Container(
-            color: Colors.grey[300],
-            alignment: Alignment.center,
-            child: Icon(Icons.broken_image, size: 36, color: Colors.red),
-          );
-        },
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.blue[700]),
       ),
-    ),
-  ),
-),
-
-                  ),
-                  if (!isAvailable)
-                    Positioned.fill(
-                      child: Center(
-                        child: Icon(Icons.lock, color: Colors.white, size: 30),
+      body: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.star,
+                              color: Colors.blue,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "Level $userLevel",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "Progress",
+                          style: TextStyle(
+                            color: Colors.blue.shade800,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Unlock new avatars as you level up!",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
                     ),
+                  ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.all(16),
+              child: GridView.builder(
+                itemCount: allAvatars.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (context, index) {
+                  final fileName = allAvatars[index];
+                  final isAvailable = _isAvatarAvailable(fileName);
+                  final isSelected =
+                      selectedAvatar == 'assets/avatars/$fileName';
+                  final levelRequired = _getUnlockLevel(fileName);
+
+                  return GestureDetector(
+                    onTap: isAvailable ? () => _selectAvatar(fileName) : null,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color:
+                                  isSelected ? Colors.blue : Colors.transparent,
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: ColorFiltered(
+                              colorFilter: isAvailable
+                                  ? ColorFilter.mode(
+                                      Colors.transparent, BlendMode.multiply)
+                                  : ColorFilter.mode(
+                                      Colors.black.withOpacity(0.6),
+                                      BlendMode.darken),
+                              child: Image.asset(
+                                'assets/avatars/$fileName',
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  debugPrint('❌ Failed to load: $fileName');
+                                  return Container(
+                                    color: Colors.grey[300],
+                                    alignment: Alignment.center,
+                                    child: Icon(Icons.broken_image,
+                                        size: 36, color: Colors.red),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (!isAvailable)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black45,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lock,
+                                      color: Colors.white, size: 24),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    "Level $levelRequired",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (isSelected)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
-  }
-}
+  }}

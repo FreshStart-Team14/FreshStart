@@ -1,0 +1,2 @@
+C:/Users/USER/Desktop/yenibranch/FreshStart/android/app/.cxx/Debug/3i491h3x/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/USER/Desktop/yenibranch/FreshStart/android/app/.cxx/Debug/3i491h3x/armeabi-v7a/CMakeFiles/rebuild_cache.dir
