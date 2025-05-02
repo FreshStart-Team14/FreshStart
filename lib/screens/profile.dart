@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freshstart/screens/avatars.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
@@ -234,143 +235,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           SingleChildScrollView(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Profile Picture Section
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: _pickImage,
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.blue.shade100,
-                              backgroundImage: _profileImage != null
-                                  ? FileImage(_profileImage!)
-                                  : null,
-                              child: _profileImage == null
-                                  ? Text(
-                                      _username.isNotEmpty
-                                          ? _username[0].toUpperCase()
-                                          : '',
-                                      style: TextStyle(
-                                        fontSize: 40,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        _username,
-                        style: TextStyle(
-                          color: Colors.blue.shade900,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        _email,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                // Stats Section
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildEditableStat(
-                          'Weight', '$_weight kg', () => _editField('weight')),
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
-                      _buildEditableStat('Daily Cigarettes', _cigarettesPerDay,
-                          () => _editField('cigarettes')),
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
-                      _buildEditableStat('Pack Price', '\$$_packPrice',
-                          () => _editField('packPrice')),
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
-                      _buildEditableStat(
-                          'Age', '$age years', () => _editField('dob')),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                // Info Section
-                Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildInfoRow('Gender', _gender, Icons.person_rounded),
-                      SizedBox(height: 16),
-                      _buildInfoRow(
-                          'Member Since', 'March 2024', Icons.calendar_today),
-                    ],
-                  ),
-                ),
-              ],
+  padding: EdgeInsets.all(20),
+  child: Column(
+    children: [
+      // Profile Picture Section
+      Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
             ),
-          ),
+          ],
+        ),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.blue.shade100,
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : null,
+                    child: _profileImage == null
+                        ? Text(
+                            _username.isNotEmpty
+                                ? _username[0].toUpperCase()
+                                : '',
+                            style: TextStyle(
+                              fontSize: 40,
+                              color: Colors.blue.shade700,
+                            ),
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              _username,
+              style: TextStyle(
+                color: Colors.blue.shade900,
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              _email,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+      SizedBox(height: 20),
+
+      // Stats Section
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            _buildEditableStat('Weight', '$_weight kg', () => _editField('weight')),
+            Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+            _buildEditableStat('Daily Cigarettes', _cigarettesPerDay, () => _editField('cigarettes')),
+            Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+            _buildEditableStat('Pack Price', '\$$_packPrice', () => _editField('packPrice')),
+            Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+            _buildEditableStat('Age', '$age years', () => _editField('dob')),
+          ],
+        ),
+      ),
+      SizedBox(height: 20),
+
+      // Info Section
+      Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            SizedBox(height: 20),
+ElevatedButton.icon(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AvatarsScreen()),
+    );
+  },
+  icon: Icon(Icons.image, color: Colors.white),
+  label: Text(
+    'Avatars & Skins',
+    style: TextStyle(color: Colors.white),
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white24,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  ),
+),
+SizedBox(height: 16),
+_buildInfoRow('Gender', _gender, Icons.person_rounded),
+SizedBox(height: 16),
+_buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
+
+          ],
+        ),
+      ),
+      SizedBox(height: 20),
+
+      // 🔵 Avatars Button
+      ElevatedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AvatarsScreen()),
+          );
+        },
+        icon: Icon(Icons.image, color: Colors.white),
+        label: Text('Avatars & Skins'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    ],
+  ),
+),
+
         ],
       ),
     );

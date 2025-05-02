@@ -32,6 +32,8 @@ class _FreshagramState extends State<Freshagram> {
 
   void _sendMessage() async {
     final message = _messageController.text.trim();
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
+    final avatar = userDoc.data()?['selectedAvatar'];
     if (message.isEmpty || _username == null) return;
 
     try {
@@ -39,6 +41,7 @@ class _FreshagramState extends State<Freshagram> {
         'sender': _username!,
         'message': message,
         'timestamp': FieldValue.serverTimestamp(),
+        'avatar': avatar,
       });
 
       _messageController.clear();
@@ -173,17 +176,23 @@ class _FreshagramState extends State<Freshagram> {
                                 : MainAxisAlignment.start,
                             children: [
                               if (!isCurrentUser)
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: Colors.blue[100],
-                                  child: Text(
-                                    msg['sender']![0].toUpperCase(),
-                                    style: TextStyle(
-                                      color: Colors.blue[900],
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+  CircleAvatar(
+    radius: 20,
+    backgroundColor: Colors.blue[100],
+    backgroundImage: msg['avatar'] != null
+        ? AssetImage(msg['avatar']) as ImageProvider
+        : null,
+    child: msg['avatar'] == null
+        ? Text(
+            msg['sender']![0].toUpperCase(),
+            style: TextStyle(
+              color: Colors.blue[900],
+              fontWeight: FontWeight.bold,
+            ),
+          )
+        : null,
+  ),
+
                               const SizedBox(width: 8),
                               Flexible(
                                 child: Container(

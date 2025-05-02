@@ -17,12 +17,30 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   Map<String, int> _dailySmokingCounts = {};
   DateTime _lastUpdated = DateTime.now();
   bool _isLoading = false;
+  bool hasCompletedDaily = false;
+  bool hasCompletedWeekly = false;
 
   @override
   void initState() {
     super.initState();
     _loadChallengeData();
   }
+  Future<void> _addXP(int xp) async {
+  try {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      int currentXP = userDoc.data()?['totalXP'] ?? 0;
+      int newXP = currentXP + xp;
+      int newLevel = (newXP / 100).floor().clamp(1, 15);
+      await _firestore.collection('users').doc(userId).update({
+        'totalXP': newXP,
+        'level': newLevel,
+      });
+    }
+  } catch (e) {
+    print('Error adding XP: $e');
+  }
+}
 
   Future<void> _loadChallengeData() async {
     if (userId.isEmpty) return;
@@ -164,6 +182,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     required int current,
     required int goal,
     required VoidCallback onTap,
+    required bool isCompleted,
+    required VoidCallback onComplete,
+    required VoidCallback onUndo,
   }) {
     final isFailed = current > goal;
     final progressColor = _getProgressColor(current, goal);
@@ -258,6 +279,26 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     minHeight: 6,
                   ),
                 ),
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: isCompleted ? null : onComplete,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isCompleted ? Colors.grey : Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(isCompleted ? "Completed" : "I Completed the Challenge"),
+                    ),
+                    if (isCompleted)
+                      TextButton(
+                        onPressed: onUndo,
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: Text("Undo"),
+                      ),
+                  ],
+                )
               ],
             ),
           ),
@@ -364,6 +405,15 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     final todaySmoked = _getTodaySmoked();
     final weekSmoked = _getWeekSmoked();
 
+    if (!_isLoading){
+      if (todaySmoked <= _dailyGoal){
+        _addXP(10);
+      }
+      if (weekSmoked <= _weeklyGoal){
+        _addXP(25);
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -406,6 +456,15 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       current: todaySmoked,
                       goal: _dailyGoal,
                       onTap: () => _showEditGoalDialog(true),
+                      isCompleted: hasCompletedDaily,
+                      onComplete: (){
+                        setState(() => hasCompletedDaily = true);
+                        _addXP(10);
+                      },
+                      onUndo: () {
+                        setState(() => hasCompletedDaily = false);
+                        _addXP(-10);
+                      },
                     ),
                     _buildChallengeCard(
                       title: 'Weekly Challenge',
@@ -414,6 +473,15 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       current: weekSmoked,
                       goal: _weeklyGoal,
                       onTap: () => _showEditGoalDialog(false),
+                      isCompleted: hasCompletedWeekly,
+                      onComplete: (){
+                        setState(() => hasCompletedWeekly = true);
+                        _addXP(25);
+                      },
+                      onUndo: (){
+                        setState(() => hasCompletedWeekly = false);
+                        _addXP(-25);
+                      },
                     ),
                   ],
                 ),

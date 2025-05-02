@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:freshstart/screens/challenges.dart' as challenges;
@@ -20,6 +21,37 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  
+  int calculatedLevel(int xp){
+      return (xp / 100).floor().clamp(1,15);
+    }
+  @override
+  void initState(){
+    super.initState();
+    _checkForMaxLevel();
+  }
+  void _checkForMaxLevel() async{
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    if (doc.exists){
+      final data = doc.data();
+      final xp = data?['totalXP'] ?? 0;
+      final level = calculatedLevel(xp);
+      if (level == 15){
+        WidgetsBinding.instance.addPostFrameCallback((_){
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🎉 Congratulations! You have reached the Max Level (15)!'),
+              backgroundColor: Colors.green.shade700,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        });
+      }
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final Color backgroundColor = Color(0xFFB3D1FF);
@@ -33,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final Color iconBg = Colors.blue.shade50;
     final Color iconColor = Colors.blue;
     final Color textColor = Colors.blue.shade900;
-
+    
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: PreferredSize(

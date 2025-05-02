@@ -158,8 +158,11 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
 
     _currentStreak++;
 
-    int earnedXP =
-        (_currentStreak % 15 == 0) ? (_currentStreak ~/ 15) * 500 : 0;
+    int earnedXP = 45;
+    if(_currentStreak % 15 == 0){
+      earnedXP += (_currentStreak ~/ 15) * 500;
+    }
+
     _totalXP += earnedXP;
     _level = _calculateLevel(_totalXP);
 
