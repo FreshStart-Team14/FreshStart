@@ -46,6 +46,7 @@ class _UserDataEntryScreenState extends State<UserDataEntryScreen> {
         'cost_per_pack': int.parse(_packPriceController.text), 
         'gender': _selectedGender,
         'dateOfBirth': Timestamp.fromDate(_dateOfBirth), //Saves user inputs to firebase
+        'tutorialShown': false,
       });
 
       Navigator.pushReplacement(

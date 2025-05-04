@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 
 class Freshagram extends StatefulWidget {
   @override
@@ -22,13 +24,18 @@ class _FreshagramState extends State<Freshagram> {
     _currentUser = FirebaseAuth.instance.currentUser!;
     _loadUsername();
   }
-  Future<void> _sendImage() async{
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-    try{
-      final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+  Future<void> _sendImage() async {
+  if (!await _requestImagePermissions()) return;
+
+  final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+  if (image == null) return;
+
+  try {
+    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
     final ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
-    await ref.putData(await image.readAsBytes());
+
+    final file = File(image.path);
+    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
 
     final imageUrl = await ref.getDownloadURL();
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
@@ -40,21 +47,70 @@ class _FreshagramState extends State<Freshagram> {
       'timestamp': FieldValue.serverTimestamp(),
       'avatar': avatar,
     });
-    }catch (e) {
+  } catch (e) {
     print('Error sending image: $e');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Failed to send image. Please try again')),
     );
   }
+}
+String formatChatDate(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final messageDate = DateTime(date.year, date.month, date.day);
+
+  final difference = today.difference(messageDate).inDays;
+
+  if (difference == 0) {
+    return 'Today';
+  } else if (difference == 1) {
+    return 'Yesterday';
+  } else if (difference < 7) {
+    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][date.weekday - 1];
+  } else if (now.year == date.year) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}';
+  } else {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
+}
+String formatTime(DateTime date) {
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
+  return '$hour:$minute';
+}
+
+Future<bool> _requestImagePermissions() async {
+  final status = await Permission.photos.request();
+  if (status.isGranted) {
+    return true;
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Permission to access photos is required.')),
+    );
+    return false;
+  }
+}
+
   Future<void> _takePhoto() async {
+  final cameraPermission = await Permission.camera.request();
+  final storagePermission = await Permission.photos.request(); // READ_MEDIA_IMAGES for Android 13+
+
+  if (!cameraPermission.isGranted || !storagePermission.isGranted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Camera and storage permissions are required.')),
+    );
+    return;
+  }
+
   final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
   if (photo == null) return;
 
   try {
     final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
     final ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
-    await ref.putData(await photo.readAsBytes());
+
+    final file = File(photo.path);
+    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
 
     final imageUrl = await ref.getDownloadURL();
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
@@ -73,6 +129,7 @@ class _FreshagramState extends State<Freshagram> {
     );
   }
 }
+
 
   Future<void> _loadUsername() async {
     final doc = await FirebaseFirestore.instance
@@ -215,97 +272,136 @@ class _FreshagramState extends State<Freshagram> {
                     }
 
                     final messages = snapshot.data!.docs;
+DateTime? lastMessageDate;
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
+return ListView.builder(
+  padding: const EdgeInsets.all(16),
+  itemCount: messages.length,
+  itemBuilder: (context, index) {
+    final msg = messages[index];
+    final data = msg.data() as Map<String, dynamic>;
+    final timestamp = data['timestamp'] as Timestamp?;
+    final messageDate = timestamp?.toDate() ?? DateTime.now();
+    final isCurrentUser = data['sender'] == _username;
 
-                        final msg = messages[index];
-                        final isCurrentUser = msg['sender'] == _username;
-                        final data = msg.data() as Map<String, dynamic>?;
-                        return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                        mainAxisAlignment: isCurrentUser
-                          ? MainAxisAlignment.end
-                          : MainAxisAlignment.start,
-                          children: [
-                            if (!isCurrentUser)
-                              CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.blue[100],
-                              backgroundImage: msg['avatar'] != null
-                                ? AssetImage(msg['avatar']) as ImageProvider
-                                : null,
-                                child: msg['avatar'] == null
-                                ? Text(
-                                  msg['sender']![0].toUpperCase(),
-                                  style: TextStyle(
-                                  color: Colors.blue[900],
-                                  fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                                : null,
-                              ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: isCurrentUser ? Colors.blue : Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!isCurrentUser)
-                Text(
-                  msg['sender']!,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    color: Colors.blue[900],
-                  ),
-                ),
-                
-              if (!isCurrentUser) const SizedBox(height: 4),
-              if (data != null && data.containsKey('imageUrl') && data['imageUrl'] != null)
+    final bool showDateHeader = index == 0 ||
+      formatChatDate(messageDate) != formatChatDate((messages[index - 1].data() as Map<String, dynamic>)['timestamp']?.toDate() ?? DateTime.now());
 
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    msg['imageUrl'],
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              if (msg['message'] != null && msg['message'].toString().isNotEmpty)
-                Text(
-                  msg['message']!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: isCurrentUser ? Colors.white : Colors.black87,
-                  ),
-                ),
-            ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (showDateHeader)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Text(
+              formatChatDate(messageDate),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
           ),
+        Row(
+          mainAxisAlignment:
+              isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            if (!isCurrentUser)
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.blue[100],
+                backgroundImage: data['avatar'] != null
+                    ? AssetImage(data['avatar']) as ImageProvider
+                    : null,
+                child: data['avatar'] == null
+                    ? Text(
+                        data['sender']![0].toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.blue[900],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
+            const SizedBox(width: 8),
+            Flexible(
+  child: ConstrainedBox(
+    constraints: BoxConstraints(
+      maxWidth: MediaQuery.of(context).size.width * 0.75,
+      minWidth: 48,
+    ),
+    child: IntrinsicWidth(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isCurrentUser ? Colors.blue : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isCurrentUser)
+              Text(
+                data['sender']!,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.blue[900],
+                ),
+              ),
+            if (!isCurrentUser) const SizedBox(height: 4),
+            if (data.containsKey('imageUrl') && data['imageUrl'] != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  data['imageUrl'],
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            if (data['message'] != null &&
+                data['message'].toString().isNotEmpty)
+              Text(
+                data['message']!,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isCurrentUser ? Colors.white : Colors.black87,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Text(
+                formatTime(messageDate),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isCurrentUser ? Colors.white70 : Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    ],
+    ),
   ),
+)
+
+
+          ],
+        ),
+      ],
+    );
+  },
 );
 
-                      },
-                    );
                   },
                 ),
               ],

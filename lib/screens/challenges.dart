@@ -12,7 +12,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
   final String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   int _dailyGoal = 10;
-  int _weeklyGoal = 50;
+  int _weeklyGoal = 15;
   int _cigarettesPerDay = 0; // User's default daily consumption
   Map<String, int> _dailySmokingCounts = {};
   DateTime _lastUpdated = DateTime.now();
@@ -41,6 +41,137 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     print('Error adding XP: $e');
   }
 }
+Future<void> _showXPPopup(int oldXP, int newXP, int level, int earnedXP) async {
+  double startValue = (oldXP % 100) / 100;
+  double endValue = (newXP % 100) / 100;
+
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text(
+          earnedXP >= 0 ? 'XP Earned!' : 'XP Removed',
+          style: TextStyle(color: earnedXP >= 0 ? Colors.blue : Colors.red),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${earnedXP > 0 ? '+' : ''}$earnedXP XP',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: earnedXP >= 0 ? Colors.green : Colors.red,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TweenAnimationBuilder<double>(
+              duration: const Duration(seconds: 2),
+              tween: Tween(begin: startValue, end: endValue),
+              builder: (context, value, child) {
+                return LinearProgressIndicator(
+                  value: value,
+                  minHeight: 10,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            Text('Level $level', style: TextStyle(color: Colors.grey[600])),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Close', style: TextStyle(color: Colors.blue)),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _addXPWithPopup(int xpChange) async {
+  try {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    if (!userDoc.exists) return;
+    int _getLevelFromXP(int xp) {
+  return (xp ~/ 100 + 1).clamp(1, 15);
+}
+
+    int currentXP = userDoc.data()?['totalXP'] ?? 0;
+    int currentLevel = _getLevelFromXP(currentXP);
+
+    int updatedXP = (currentXP + xpChange).clamp(0, double.infinity).toInt();
+    int updatedLevel = _getLevelFromXP(updatedXP);
+
+    if (xpChange == 0 || updatedXP == currentXP) return;
+
+    await _firestore.collection('users').doc(userId).update({
+      'totalXP': updatedXP,
+      'level': updatedLevel,
+    });
+
+    await _showXPPopup(currentXP, updatedXP, updatedLevel, xpChange);
+
+    // 🔥 Level-up confirmation
+    if (updatedLevel > currentLevel) {
+      await _showLevelUpPopup(updatedLevel);
+    }
+  } catch (e) {
+    print('❌ Error updating XP: $e');
+  }
+}
+
+Future<void> _showLevelUpPopup(int level) async {
+  await Future.delayed(Duration(milliseconds: 300)); // optional delay after XP dialog
+
+  await showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      title: Row(
+        children: [
+          Icon(Icons.emoji_events, color: Colors.amber, size: 28),
+          const SizedBox(width: 8),
+          Text(
+            'Level Up!',
+            style: TextStyle(
+              color: Colors.blue[800],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            '🎉 Congratulations!',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'You\'ve reached Level $level.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Awesome!', style: TextStyle(color: Colors.blue)),
+        ),
+      ],
+    ),
+  );
+}
+
+
 
   Future<void> _loadChallengeData() async {
     if (userId.isEmpty) return;
@@ -62,13 +193,14 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
             data['dailySmokingCounts'] as Map<String, dynamic>? ?? {};
 
         setState(() {
-          _dailyGoal = data['dailyGoal'] ?? (_cigarettesPerDay * 0.7).floor();
-          _weeklyGoal =
-              data['weeklyGoal'] ?? (_cigarettesPerDay * 7 * 0.7).floor();
-          _lastUpdated = (data['lastUpdated'] as Timestamp).toDate();
-          _dailySmokingCounts =
-              smokingData.map((key, value) => MapEntry(key, value as int));
-        });
+  _dailyGoal = data['dailyGoal'] ?? (_cigarettesPerDay * 0.7).floor();
+  _weeklyGoal = data['weeklyGoal'] ?? (_cigarettesPerDay * 7 * 0.7).floor();
+  _lastUpdated = (data['lastUpdated'] as Timestamp).toDate();
+  _dailySmokingCounts = smokingData.map((key, value) => MapEntry(key, value as int));
+  hasCompletedDaily = data['hasCompletedDaily'] ?? false;
+  hasCompletedWeekly = data['hasCompletedWeekly'] ?? false;
+});
+
       } else {
         // Set initial goals to 70% of current consumption
         setState(() {
@@ -96,16 +228,18 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
         smokingData[key] = value;
       });
 
-      await _firestore.collection('user_challenges').doc(userId).set(
-          {
-            'dailyGoal': _dailyGoal,
-            'weeklyGoal': _weeklyGoal,
-            'lastUpdated': Timestamp.now(),
-            'dailySmokingCounts': smokingData,
-          },
+      await _firestore.collection('user_challenges').doc(userId).set({
+  'dailyGoal': _dailyGoal,
+  'weeklyGoal': _weeklyGoal,
+  'lastUpdated': Timestamp.now(),
+  'dailySmokingCounts': smokingData,
+  'hasCompletedDaily': hasCompletedDaily,
+  'hasCompletedWeekly': hasCompletedWeekly,
+}, SetOptions(merge: true));
+
           SetOptions(
               merge:
-                  true)); // Use merge option to prevent overwriting other fields
+                  true); // Use merge option to prevent overwriting other fields
     } catch (e) {
       print('Error saving challenge data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -284,7 +418,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     ElevatedButton(
-                      onPressed: isCompleted ? null : onComplete,
+                      onPressed: (isCompleted || isFailed) ? null : onComplete,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isCompleted ? Colors.grey : Colors.green,
                         foregroundColor: Colors.white,
@@ -405,15 +539,6 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
     final todaySmoked = _getTodaySmoked();
     final weekSmoked = _getWeekSmoked();
 
-    if (!_isLoading){
-      if (todaySmoked <= _dailyGoal){
-        _addXP(10);
-      }
-      if (weekSmoked <= _weeklyGoal){
-        _addXP(25);
-      }
-    }
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -451,21 +576,25 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildChallengeCard(
-                      title: 'Daily Challenge',
-                      subtitle: 'Smoke less than $_dailyGoal cigarettes today',
-                      current: todaySmoked,
-                      goal: _dailyGoal,
-                      onTap: () => _showEditGoalDialog(true),
-                      isCompleted: hasCompletedDaily,
-                      onComplete: (){
-                        setState(() => hasCompletedDaily = true);
-                        _addXP(10);
-                      },
-                      onUndo: () {
-                        setState(() => hasCompletedDaily = false);
-                        _addXP(-10);
-                      },
-                    ),
+  title: 'Daily Challenge',
+  subtitle: 'Smoke less than $_dailyGoal cigarettes today',
+  current: todaySmoked,
+  goal: _dailyGoal,
+  onTap: () => _showEditGoalDialog(true),
+  isCompleted: hasCompletedDaily,
+  onComplete: () async {
+  setState(() => hasCompletedDaily = true);
+  await _saveChallengeData();
+  await _addXPWithPopup(10);
+},
+onUndo: () async {
+  setState(() => hasCompletedDaily = false);
+  await _saveChallengeData();
+  await _addXPWithPopup(-10);
+},
+
+),
+
                     _buildChallengeCard(
                       title: 'Weekly Challenge',
                       subtitle:
@@ -474,14 +603,17 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                       goal: _weeklyGoal,
                       onTap: () => _showEditGoalDialog(false),
                       isCompleted: hasCompletedWeekly,
-                      onComplete: (){
-                        setState(() => hasCompletedWeekly = true);
-                        _addXP(25);
-                      },
-                      onUndo: (){
-                        setState(() => hasCompletedWeekly = false);
-                        _addXP(-25);
-                      },
+                      onComplete: () async {
+  setState(() => hasCompletedWeekly = true);
+  await _saveChallengeData();
+  await _addXPWithPopup(15);
+},
+onUndo: () async {
+  setState(() => hasCompletedWeekly = false);
+  await _saveChallengeData();
+  await _addXPWithPopup(-15);
+},
+
                     ),
                   ],
                 ),
@@ -528,7 +660,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                             Icon(Icons.smoking_rooms),
                             SizedBox(width: 8),
                             Text(
-                              'Record Cigarette',
+                              'I Smoked a Cigarette',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

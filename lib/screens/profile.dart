@@ -332,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
-            _buildEditableStat('Weight', '$_weight kg', () => _editField('weight')),
+            _buildEditableStat('Weight', '$_weight kg', null),
             Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
             _buildEditableStat('Daily Cigarettes', _cigarettesPerDay, () => _editField('cigarettes')),
             Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
@@ -361,33 +361,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             SizedBox(height: 20),
-ElevatedButton.icon(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => AvatarsScreen()),
-    );
-  },
-  icon: Icon(Icons.image, color: Colors.white),
-  label: Text(
-    'Avatars & Skins',
-    style: TextStyle(color: Colors.white),
-  ),
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.white24,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  ),
-),
-SizedBox(height: 16),
-_buildInfoRow('Gender', _gender, Icons.person_rounded),
-SizedBox(height: 16),
-_buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
-
-          ],
-        ),
-      ),
-      SizedBox(height: 20),
 
       // 🔵 Avatars Button
       ElevatedButton.icon(
@@ -406,6 +379,15 @@ _buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
+SizedBox(height: 16),
+_buildInfoRow('Gender', _gender, Icons.person_rounded),
+SizedBox(height: 16),
+_buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
+
+          ],
+        ),
+      ),
+      
     ],
   ),
 ),
@@ -415,41 +397,43 @@ _buildInfoRow('Member Since', 'March 2024', Icons.calendar_today),
     );
   }
 
-  Widget _buildEditableStat(String label, String value, VoidCallback onTap) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+  Widget _buildEditableStat(String label, String value, VoidCallback? onTap) {
+  return Container(
+    padding: EdgeInsets.all(16),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
               ),
-              SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  color: Colors.blue.shade900,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                color: Colors.blue.shade900,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
+        if (onTap != null)
           IconButton(
             icon: Icon(Icons.edit, color: Colors.blue),
             onPressed: onTap,
-          )
-        ],
-      ),
-    );
-  }
+          ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
     return Row(

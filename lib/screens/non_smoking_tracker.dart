@@ -23,6 +23,7 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
   late Animation<double> _scaleAnimation;
   bool _isProcessing = false;
 
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +51,53 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
     _buttonAnimationController.dispose();
     super.dispose();
   }
+Future<void> _showLevelUpPopup(int level) async {
+  await Future.delayed(Duration(milliseconds: 300)); // Smooth delay after XP popup
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      title: Row(
+        children: [
+          Icon(Icons.emoji_events, color: Colors.amber, size: 28),
+          SizedBox(width: 8),
+          Text(
+            'Level Up!',
+            style: TextStyle(
+              color: Colors.blue[800],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '🎉 Congratulations!',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'You\'ve reached Level $level.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Awesome!',
+            style: TextStyle(color: Colors.blue),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   void _loadNonSmokingDays() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -104,115 +152,226 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
   }
 
   void _saveNonSmokingDay() async {
-    if (_isProcessing) return;
+  if (_isProcessing) return;
 
-    setState(() => _isProcessing = true);
-    _buttonAnimationController.forward();
+  setState(() => _isProcessing = true);
+  _buttonAnimationController.forward();
+  await Future.delayed(const Duration(milliseconds: 500));
 
-    // Simulate a brief loading period
-    await Future.delayed(const Duration(milliseconds: 500));
+  String userId = FirebaseAuth.instance.currentUser!.uid;
+  SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> savedDays = _nonSmokingDays.keys
-        .map((e) => e.toIso8601String().split('T')[0])
-        .toList();
+  final selectedStr = _selectedDay.toIso8601String().split('T')[0];
+  List<String> savedDays = _nonSmokingDays.keys
+      .map((e) => e.toIso8601String().split('T')[0])
+      .toList();
 
-    final todayString = DateTime.now().toIso8601String().split('T')[0];
+  if (savedDays.contains(selectedStr)) {
+    Fluttertoast.showToast(
+      msg: "This date is already marked as non-smoked.",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+    );
+    _buttonAnimationController.reverse();
+    setState(() => _isProcessing = false);
+    return;
+  }
+
+  savedDays.add(selectedStr);
+  _nonSmokingDays[_selectedDay] = ['Non-Smoked'];
+
+  try {
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'nonSmokingDays': savedDays,
+    });
+
+    await prefs.setString('lastAddedDay', DateTime.now().toIso8601String());
+
+    _updateStreakAndXP(); // Still use one-day logic
+  } catch (e) {
+    print('Error saving selected non-smoked day: $e');
+  }
+
+  await Future.delayed(const Duration(milliseconds: 500));
+  _buttonAnimationController.reverse();
+  setState(() => _isProcessing = false);
+}
+
+  Future<void> _updateStreakAndXP() async {
+  String userId = FirebaseAuth.instance.currentUser!.uid;
+
+  _currentStreak++;
+  int earnedXP = 20;
+  int oldXP = _totalXP;
+  int oldLevel = _level;
+  int newXP = oldXP + earnedXP;
+  int newLevel = _calculateLevel(newXP);
+  if (_currentStreak % 15 == 0) {
+    earnedXP += (_currentStreak ~/ 15) * 500;
+  }
+
+
+  setState(() {
+  _totalXP = newXP;
+  _level = newLevel;
+});
+
+await FirebaseFirestore.instance.collection('users').doc(userId).update({
+  'currentStreak': _currentStreak,
+  'totalXP': newXP,
+  'level': newLevel,
+  'lastAddedDay': DateTime.now().toIso8601String(),
+});
+
+await _showXPPopup(oldXP, newXP, newLevel, earnedXP);
+
+// ✅ If user leveled up, show congrats popup
+if (newLevel > oldLevel) {
+  await _showLevelUpPopup(newLevel);
+}
+
+}
+Future<void> _showXPPopup(int oldXP, int newXP, int level, int earnedXP) async {
+  final start = (oldXP % 500) / 500;
+  final end = (newXP % 500) / 500;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: Text(
+          'XP Gained!',
+          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '+$earnedXP XP',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            SizedBox(height: 16),
+            TweenAnimationBuilder<double>(
+              duration: Duration(seconds: 2),
+              tween: Tween(begin: start, end: end),
+              builder: (context, value, child) {
+                return LinearProgressIndicator(
+                  value: value,
+                  minHeight: 10,
+                  backgroundColor: Colors.grey[300],
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                );
+              },
+            ),
+            SizedBox(height: 12),
+            Text('Level $level', style: TextStyle(color: Colors.grey[600])),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: Text('Close', style: TextStyle(color: Colors.blue)),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      );
+    },
+  );
+}
+
+
+  int _calculateLevel(int totalXP) {
+  return (totalXP ~/ 100 + 1).clamp(1, 15);
+}
+
+
+  void _resetData() async {
+  String userId = FirebaseAuth.instance.currentUser!.uid;
+  final todayString = DateTime.now().toIso8601String().split('T')[0];
+
+  try {
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (!userDoc.exists) return;
+
+    List<String> savedDays = List<String>.from(userDoc.data()?['nonSmokingDays'] ?? []);
+    int currentStreak = userDoc.data()?['currentStreak'] ?? 0;
+    int totalXP = userDoc.data()?['totalXP'] ?? 0;
+    int level = userDoc.data()?['level'] ?? 1;
 
     if (!savedDays.contains(todayString)) {
-      savedDays.add(todayString);
-      _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
-
-      try {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update({
-          'nonSmokingDays': savedDays,
-        });
-        _updateStreakAndXP();
-      } catch (e) {
-        print('Error saving non-smoked day to Firestore: $e');
-      }
-
-      await prefs.setString('lastAddedDay', DateTime.now().toIso8601String());
-    } else {
       Fluttertoast.showToast(
-        msg: "This day is already marked.",
+        msg: "Today hasn't been marked as non-smoked.",
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.BOTTOM,
       );
+      return;
     }
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    _buttonAnimationController.reverse();
-    setState(() {
-      _isProcessing = false;
-      _nonSmokingDays[DateTime.now()] = ['Non-Smoked'];
+    savedDays.remove(todayString);
+    int xpToSubtract = 20;
+    if ((currentStreak % 15 == 0) && currentStreak != 0) {
+      xpToSubtract += (currentStreak ~/ 15) * 500;
+    }
+
+    int updatedXP = (totalXP - xpToSubtract).clamp(0, double.infinity).toInt();
+    int updatedStreak = (currentStreak - 1).clamp(0, double.infinity).toInt();
+    int updatedLevel = _calculateLevel(updatedXP);
+
+    await FirebaseFirestore.instance.collection('users').doc(userId).update({
+      'nonSmokingDays': savedDays,
+      'currentStreak': updatedStreak,
+      'totalXP': updatedXP,
+      'level': updatedLevel,
     });
+
+    setState(() {
+      _nonSmokingDays.removeWhere((date, _) =>
+          date.toIso8601String().split('T')[0] == todayString);
+      _currentStreak = updatedStreak;
+      _totalXP = updatedXP;
+      _level = updatedLevel;
+    });
+
+    Fluttertoast.showToast(
+      msg: "Today's entry removed. XP and streak updated.",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+    );
+  } catch (e) {
+    print('Error resetting today: $e');
   }
+}
 
-  void _updateStreakAndXP() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-
-    _currentStreak++;
-
-    int earnedXP = 45;
-    if(_currentStreak % 15 == 0){
-      earnedXP += (_currentStreak ~/ 15) * 500;
-    }
-
-    _totalXP += earnedXP;
-    _level = _calculateLevel(_totalXP);
-
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'currentStreak': _currentStreak,
-        'totalXP': _totalXP,
-        'level': _level,
-        'lastAddedDay': DateTime.now().toIso8601String(),
-      });
-    } catch (e) {
-      print('Error updating Firestore: $e');
-    }
-  }
-
-  int _calculateLevel(int xp) {
-    int level = 1;
-    int requiredXP = 500;
-
-    while (level <= 150 && xp >= requiredXP) {
-      xp -= requiredXP;
-      level++;
-      requiredXP += 500;
-    }
-
-    return level;
-  }
-
-  void _resetData() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-
-    try {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'currentStreak': 0,
-        'totalXP': 0,
-        'level': 1,
-        'lastAddedDay': DateTime.now().toIso8601String(),
-        'nonSmokingDays': [],
-      });
-
-      setState(() {
-        _currentStreak = 0;
-        _totalXP = 0;
-        _level = 1;
-        _nonSmokingDays.clear();
-      });
-    } catch (e) {
-      print('Error resetting data in Firestore: $e');
-    }
-  }
+Widget _buildDayPicker() {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text("Select Date: ", style: TextStyle(fontSize: 16)),
+      TextButton(
+        onPressed: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime.now().subtract(Duration(days: 30)),
+            lastDate: DateTime.now(),
+          );
+          if (picked != null) {
+            setState(() => _selectedDay = picked);
+          }
+        },
+        child: Text(
+          "${_selectedDay.day.toString().padLeft(2, '0')}.${_selectedDay.month.toString().padLeft(2, '0')}.${_selectedDay.year}",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _buildAnimatedButton() {
     return AnimatedBuilder(
@@ -502,18 +661,21 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
                 child: _buildStatsCard(),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 10),
-                    _buildCalendarCard(),
-                    const SizedBox(height: 20),
-                    _buildAnimatedButton(),
-                    _buildResetButton(),
-                  ],
-                ),
-              ),
+  padding: const EdgeInsets.all(16.0),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 10),
+      _buildCalendarCard(),
+      const SizedBox(height: 20),
+      _buildDayPicker(),            // 👈 Inserted here
+      const SizedBox(height: 12),
+      _buildAnimatedButton(),
+      _buildResetButton(),
+    ],
+  ),
+),
+
             ],
           ),
         ),

@@ -44,6 +44,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         'cigarettes_per_day': null,
         'cost_per_pack': null,
         'date_of_birth': null,
+        'tutorialShown': false,
       }); //Stores above user data
 
       Navigator.of(context).pushReplacement(
