@@ -187,7 +187,7 @@ Widget build(BuildContext context) {
     _gridData("Profile", ProfileScreen(), Icons.person, profileKey),
     _gridData("Challenges", ChallengesScreen(), Icons.track_changes, challengesKey),
     _gridData("FreshAI", CommunityScreen(), Icons.people, communityKey),
-    _gridData("Freshagram", Freshagram(), Icons.chat_bubble, freshagramKey),
+    _gridData("Community", Freshagram(), Icons.chat_bubble, freshagramKey),
   ];
 
   return Scaffold(

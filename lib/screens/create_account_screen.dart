@@ -23,9 +23,17 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  
 
   Future<void> createAccount() async {
     //This method is called when create account button is clicked
+    final defaultDietPlan = {
+  'breakfast': ["", ""],
+  'lunch': ["", ""],
+  'dinner': ["", ""],
+  'snacks': ["", ""],
+};
+
     try {
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
@@ -35,17 +43,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       ); //Creates and saves user account to firebase by using mail and password
 
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        //Creates a user document in collection of firebase, uses unique user id
-        'username': _usernameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'weight': null,
-        'height': null,
-        'age': null,
-        'cigarettes_per_day': null,
-        'cost_per_pack': null,
-        'date_of_birth': null,
-        'tutorialShown': false,
-      }); //Stores above user data
+  'username': _usernameController.text.trim(),
+  'email': _emailController.text.trim(),
+  'weight': null,
+  'height': null,
+  'age': null,
+  'cigarettes_per_day': null,
+  'cost_per_pack': null,
+  'date_of_birth': null,
+  'tutorialShown': false,
+  'dietPlan': defaultDietPlan,
+});
+ //Stores above user data
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(

@@ -12,7 +12,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
 
-  // 🚨 Insert your OpenAI API Key here (dev/testing only!)
+  
   final String _apiKey = '';
 
   Future<void> _sendMessage() async {
@@ -35,6 +35,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<String> _fetchChatGPTResponse(String prompt) async {
     const String apiUrl = 'https://api.openai.com/v1/chat/completions';
+    bool isTurkish(String text) {
+  final turkishChars = RegExp(r'[çÇğĞıİöÖşŞüÜ]');
+  return turkishChars.hasMatch(text);
+}
+final isInputTurkish = isTurkish(prompt);
+final fallbackMessage = isInputTurkish
+    ? 'Ben, sigarayı bırakma sürecinizde size destek olmak için buradayım. Haydi bu yolculuğa odaklanalım.'
+    : "I'm here to support you in quitting smoking. Let's stay focused on that journey together.";
+
+final systemMessage = {
+  "role": "system",
+  "content": """
+Sen, sigarayı bırakmaya çalışan kullanıcılara yardımcı olan destekleyici bir yapay zekasın.
+Yalnızca sigara bağımlılığı, bırakma süreci, istekle başa çıkma, motivasyon, yoksunluk belirtileri ve zihinsel destek ile ilgili soruları yanıtla.
+
+Eğer kullanıcı sana başka bir konuda (örneğin hava durumu, yemek tarifleri, haberler, teknoloji vb.) bir şey sorarsa, şu mesajla yanıt ver:
+"Sigarayı bırakma sürecinde size destek olmak için buradayım. Hadi bu yolculuğa odaklanalım."
+
+Kullanıcının Türkçe yazdığını unutma. Lütfen her yanıtını Türkçe olarak ver.
+"""
+};
+
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -43,19 +65,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
         'Authorization': 'Bearer $_apiKey',
       },
       body: jsonEncode({
-        'model': 'gpt-3.5-turbo',
-        'messages': [
-          {
-            "role": "system",
-            "content":
-                "You are a supportive AI assistant helping users quit smoking. Only answer questions related to smoking addiction, cravings, motivation, withdrawal symptoms, and mental support. If the user asks anything unrelated to smoking cessation, reply with: 'I'm here to support you in quitting smoking. Let's stay focused on that journey together.'",
-          },
-          ..._messages,
-          {'role': 'user', 'content': prompt},
-        ],
-        "max_tokens": 200,
-        "temperature": 0.3,
-      }),
+  'model': 'gpt-3.5-turbo',
+  'messages': [
+    systemMessage,
+    ..._messages,
+    {'role': 'user', 'content': prompt},
+  ],
+  "max_tokens": 200,
+  "temperature": 0.3,
+}),
+
     );
 
     if (response.statusCode == 200) {
@@ -102,7 +121,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           IconButton(
             icon: Icon(Icons.more_vert, color: Colors.blue),
             onPressed: () {
-              // Add community settings or options here
+              
             },
           ),
         ],
@@ -112,7 +131,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           Expanded(
             child: Stack(
               children: [
-                // Watermark background
+                
                 Positioned.fill(
                   child: ShaderMask(
                     shaderCallback: (Rect bounds) {

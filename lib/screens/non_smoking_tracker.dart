@@ -27,8 +27,10 @@ class _NonSmokingTrackerScreenState extends State<NonSmokingTrackerScreen>
   @override
   void initState() {
     super.initState();
-    _loadNonSmokingDays();
     _loadStreakData();
+    _loadNonSmokingDays().then((_) => _checkForStreakReset());
+    _loadStreakData();
+
 
     _buttonAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -99,7 +101,7 @@ Future<void> _showLevelUpPopup(int level) async {
   );
 }
 
-  void _loadNonSmokingDays() async {
+Future<void> _loadNonSmokingDays() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
 
     try {
@@ -141,18 +143,52 @@ Future<void> _showLevelUpPopup(int level) async {
   }
 
   void _checkForStreakReset() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    DateTime lastAddedDay = DateTime.parse(
-        prefs.getString('lastAddedDay') ?? DateTime.now().toIso8601String());
-
-    if (DateTime.now().difference(lastAddedDay).inDays > 1) {
-      _currentStreak = 0;
-      await prefs.setInt('currentStreak', _currentStreak);
-    }
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  DateTime? lastAddedDate;
+  try {
+    lastAddedDate = DateTime.parse(prefs.getString('lastAddedDay') ?? '');
+  } catch (_) {
+    lastAddedDate = null;
   }
+
+  final now = DateTime.now();
+  final yesterday = DateTime(now.year, now.month, now.day - 1);
+
+  // Check if yesterday is marked
+  final isYesterdayMarked = _nonSmokingDays.keys.any((date) =>
+    date.year == yesterday.year &&
+    date.month == yesterday.month &&
+    date.day == yesterday.day
+  );
+
+  if (!isYesterdayMarked) {
+    _currentStreak = 0;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'currentStreak': _currentStreak});
+
+    await prefs.setInt('currentStreak', _currentStreak);
+  }
+}
+
 
   void _saveNonSmokingDay() async {
   if (_isProcessing) return;
+  final now = DateTime.now();
+if (_selectedDay.year != now.year ||
+    _selectedDay.month != now.month ||
+    _selectedDay.day != now.day) {
+  Fluttertoast.showToast(
+    msg: "Only today's date can be marked.",
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.BOTTOM,
+  );
+  _buttonAnimationController.reverse();
+  setState(() => _isProcessing = false);
+  return;
+}
 
   setState(() => _isProcessing = true);
   _buttonAnimationController.forward();
@@ -172,10 +208,21 @@ Future<void> _showLevelUpPopup(int level) async {
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.BOTTOM,
     );
+    
     _buttonAnimationController.reverse();
     setState(() => _isProcessing = false);
     return;
   }
+  if (_selectedDay.isAfter(DateTime.now())) {
+  Fluttertoast.showToast(
+    msg: "You can't mark a future date.",
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.BOTTOM,
+  );
+  _buttonAnimationController.reverse();
+  setState(() => _isProcessing = false);
+  return;
+}
 
   savedDays.add(selectedStr);
   _nonSmokingDays[_selectedDay] = ['Non-Smoked'];
@@ -191,7 +238,7 @@ Future<void> _showLevelUpPopup(int level) async {
   } catch (e) {
     print('Error saving selected non-smoked day: $e');
   }
-
+  
   await Future.delayed(const Duration(milliseconds: 500));
   _buttonAnimationController.reverse();
   setState(() => _isProcessing = false);
@@ -348,31 +395,7 @@ Future<void> _showXPPopup(int oldXP, int newXP, int level, int earnedXP) async {
   }
 }
 
-Widget _buildDayPicker() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text("Select Date: ", style: TextStyle(fontSize: 16)),
-      TextButton(
-        onPressed: () async {
-          final picked = await showDatePicker(
-            context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime.now().subtract(Duration(days: 30)),
-            lastDate: DateTime.now(),
-          );
-          if (picked != null) {
-            setState(() => _selectedDay = picked);
-          }
-        },
-        child: Text(
-          "${_selectedDay.day.toString().padLeft(2, '0')}.${_selectedDay.month.toString().padLeft(2, '0')}.${_selectedDay.year}",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-    ],
-  );
-}
+
 
   Widget _buildAnimatedButton() {
     return AnimatedBuilder(
@@ -535,11 +558,25 @@ Widget _buildDayPicker() {
           calendarFormat: _calendarFormat,
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
           onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _calendarFormat = CalendarFormat.month;
-            });
-          },
+  final now = DateTime.now();
+  if (selectedDay.year != now.year ||
+      selectedDay.month != now.month ||
+      selectedDay.day != now.day) {
+    Fluttertoast.showToast(
+      msg: "You can only select today's date.",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+    );
+    return;
+  }
+
+  setState(() {
+    _selectedDay = selectedDay;
+    _calendarFormat = CalendarFormat.month;
+  });
+},
+
+
           eventLoader: (day) => _nonSmokingDays[day] ?? [],
           calendarStyle: CalendarStyle(
             markersMaxCount: 1,
@@ -669,7 +706,7 @@ Widget _buildDayPicker() {
       const SizedBox(height: 10),
       _buildCalendarCard(),
       const SizedBox(height: 20),
-      _buildDayPicker(),            // 👈 Inserted here
+                
       const SizedBox(height: 12),
       _buildAnimatedButton(),
       _buildResetButton(),

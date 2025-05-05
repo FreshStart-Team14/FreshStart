@@ -30,23 +30,36 @@ class _FreshagramState extends State<Freshagram> {
   final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
   if (image == null) return;
 
+  final File file = File(image.path);
+  final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+  final Reference ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
+
   try {
-    final fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    final ref = FirebaseStorage.instance.ref().child('group_images/$fileName.jpg');
+    final UploadTask uploadTask = ref.putFile(
+      file,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    final TaskSnapshot snapshot = await uploadTask;
 
-    final file = File(image.path);
-    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
+    final String downloadUrl = await snapshot.ref.getDownloadURL();
 
-    final imageUrl = await ref.getDownloadURL();
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser.uid).get();
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_currentUser.uid)
+        .get();
     final avatar = userDoc.data()?['selectedAvatar'];
 
     await FirebaseFirestore.instance.collection('group_messages').add({
       'sender': _username!,
-      'imageUrl': imageUrl,
+      'imageUrl': downloadUrl,
       'timestamp': FieldValue.serverTimestamp(),
       'avatar': avatar,
     });
+  } on FirebaseException catch (e) {
+    print('🔥 Upload error: ${e.code} - ${e.message}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to send image. ${e.message}')),
+    );
   } catch (e) {
     print('Error sending image: $e');
     ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +67,7 @@ class _FreshagramState extends State<Freshagram> {
     );
   }
 }
+
 String formatChatDate(DateTime date) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
@@ -443,26 +457,8 @@ return ListView.builder(
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.image, color: Colors.blue),
-                      onPressed: _sendImage,
-                    ),
-                  ),
-                  Container(
-  decoration: BoxDecoration(
-    color: Colors.grey[300],
-    borderRadius: BorderRadius.circular(20),
-  ),
-  child: IconButton(
-    icon: const Icon(Icons.camera_alt, color: Colors.blue),
-    onPressed: _takePhoto,
-  ),
-),
+                  
+                  
 const SizedBox(width: 8),
                   Container(
                     decoration: BoxDecoration(

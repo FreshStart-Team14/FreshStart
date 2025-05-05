@@ -19,6 +19,13 @@ class _UserDataEntryScreenState extends State<UserDataEntryScreen> {
 
   Future<void> _saveUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    final defaultDietPlan = {
+  'breakfast': ["", ""],
+  'lunch': ["", ""],
+  'dinner': ["", ""],
+  'snacks': ["", ""],
+};
+
 
     if (_weightController.text.isEmpty ||
         _heightController.text.isEmpty ||
@@ -32,16 +39,18 @@ class _UserDataEntryScreenState extends State<UserDataEntryScreen> {
       String userId = FirebaseAuth.instance.currentUser!.uid;
 
       await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'username': FirebaseAuth.instance.currentUser!.displayName ?? '',
-        'email': FirebaseAuth.instance.currentUser!.email,
-        'weight': int.parse(_weightController.text),
-        'height': int.parse(_heightController.text),
-        'cigarettes_per_day': int.parse(_cigarettesController.text),
-        'cost_per_pack': int.parse(_packPriceController.text),
-        'gender': _selectedGender,
-        'dateOfBirth': Timestamp.fromDate(_dateOfBirth),
-        'tutorialShown': false,
-      });
+  'username': FirebaseAuth.instance.currentUser!.displayName ?? '',
+  'email': FirebaseAuth.instance.currentUser!.email,
+  'weight': int.parse(_weightController.text),
+  'height': int.parse(_heightController.text),
+  'cigarettes_per_day': int.parse(_cigarettesController.text),
+  'cost_per_pack': int.parse(_packPriceController.text),
+  'gender': _selectedGender,
+  'dateOfBirth': Timestamp.fromDate(_dateOfBirth),
+  'tutorialShown': false,
+  'dietPlan': defaultDietPlan,
+});
+
 
       Navigator.pushReplacement(
         context,
