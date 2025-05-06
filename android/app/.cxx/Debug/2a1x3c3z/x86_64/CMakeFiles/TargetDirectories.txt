@@ -1,0 +1,2 @@
+/Users/ardaogun/Documents/FreshStartGit/FreshStart/android/app/.cxx/Debug/2a1x3c3z/x86_64/CMakeFiles/edit_cache.dir
+/Users/ardaogun/Documents/FreshStartGit/FreshStart/android/app/.cxx/Debug/2a1x3c3z/x86_64/CMakeFiles/rebuild_cache.dir

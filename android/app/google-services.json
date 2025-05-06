@@ -2,17 +2,22 @@
   "project_info": {
     "project_number": "1029181585413",
     "project_id": "freshstart-3aefa",
-    "storage_bucket": "freshstart-3aefa.appspot.com"
+    "storage_bucket": "freshstart-3aefa.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:1029181585413:android:6293a00e441e40018e046c",
         "android_client_info": {
-          "package_name": "com.example.freshstart"
+          "package_name": "com.freshstart.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1029181585413-98ige4tsrmnctibronufggt4lvdrb0el.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBfXNkZG6lQmiShzLvh2ZNJF1lzXmp-SKs"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1029181585413-98ige4tsrmnctibronufggt4lvdrb0el.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1029181585413-8io3ulk51b13l0ts6lfkjsah5gkhb9s1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.freshstart"
+              }
+            }
+          ]
         }
       }
     }

@@ -49,7 +49,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1029181585413',
     projectId: 'freshstart-3aefa',
     authDomain: 'freshstart-3aefa.firebaseapp.com',
-    storageBucket: 'freshstart-3aefa.appspot.com',
+    storageBucket: 'freshstart-3aefa.firebasestorage.app',
     measurementId: 'G-VPQPL79V22',
   );
 
@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
     appId: '1:1029181585413:android:6293a00e441e40018e046c',
     messagingSenderId: '1029181585413',
     projectId: 'freshstart-3aefa',
-    storageBucket: 'freshstart-3aefa.appspot.com',
+    storageBucket: 'freshstart-3aefa.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -66,7 +66,8 @@ class DefaultFirebaseOptions {
     appId: '1:1029181585413:ios:a9a84b54032655a98e046c',
     messagingSenderId: '1029181585413',
     projectId: 'freshstart-3aefa',
-    storageBucket: 'freshstart-3aefa.appspot.com',
+    storageBucket: 'freshstart-3aefa.firebasestorage.app',
+    iosClientId: '1029181585413-8io3ulk51b13l0ts6lfkjsah5gkhb9s1.apps.googleusercontent.com',
     iosBundleId: 'com.example.freshstart',
   );
 
@@ -75,7 +76,8 @@ class DefaultFirebaseOptions {
     appId: '1:1029181585413:ios:a9a84b54032655a98e046c',
     messagingSenderId: '1029181585413',
     projectId: 'freshstart-3aefa',
-    storageBucket: 'freshstart-3aefa.appspot.com',
+    storageBucket: 'freshstart-3aefa.firebasestorage.app',
+    iosClientId: '1029181585413-8io3ulk51b13l0ts6lfkjsah5gkhb9s1.apps.googleusercontent.com',
     iosBundleId: 'com.example.freshstart',
   );
 
@@ -85,8 +87,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1029181585413',
     projectId: 'freshstart-3aefa',
     authDomain: 'freshstart-3aefa.firebaseapp.com',
-    storageBucket: 'freshstart-3aefa.appspot.com',
+    storageBucket: 'freshstart-3aefa.firebasestorage.app',
     measurementId: 'G-ERJY7REC0D',
   );
-}
 
+}
