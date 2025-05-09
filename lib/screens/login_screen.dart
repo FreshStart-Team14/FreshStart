@@ -87,7 +87,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Welcome',
+                        'FreshStart',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,

@@ -43,9 +43,12 @@ class _DietPlansScreenState extends State<DietPlansScreen> {
               : {};
         });
 
-        if (dietPlan.isEmpty) {
-          _fetchAndStoreDietPlan();
-        }
+        final currentCategory = _getBMICategory(weight / (heightInMeters * heightInMeters));
+if (bmiCategory != currentCategory || dietPlan.isEmpty) {
+  bmiCategory = currentCategory;
+  await _fetchAndStoreDietPlan();
+}
+
       }
     }
   }

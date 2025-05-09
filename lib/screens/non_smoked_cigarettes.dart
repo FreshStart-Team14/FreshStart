@@ -127,28 +127,42 @@ class _NonSmokedCigarettesScreenState extends State<NonSmokedCigarettesScreen>
   }
 
   void _showInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Icon(Icons.info_outline, color: Colors.blue),
             SizedBox(width: 8),
-            Text('About Recovery Progress'),
+            Expanded(
+              child: Text(
+                'About Recovery Progress',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.blue.shade800,
+                ),
+              ),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'This timeline shows your body\'s recovery process after quitting smoking. Each milestone represents a significant health improvement:',
-              style: TextStyle(fontSize: 14),
-            ),
-            SizedBox(height: 16),
-            ...toxinRecoveryData.map((toxin) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This timeline shows your body\'s recovery process after quitting smoking. Each milestone represents a significant health improvement:',
+                style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+              ),
+              SizedBox(height: 16),
+              ...toxinRecoveryData.map(
+                (toxin) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(toxin['icon'], color: Colors.blue, size: 20),
                       SizedBox(width: 8),
@@ -161,29 +175,40 @@ class _NonSmokedCigarettesScreenState extends State<NonSmokedCigarettesScreen>
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
+                                color: Colors.black87,
                               ),
                             ),
                             Text(
                               toxin['description'],
-                              style: TextStyle(fontSize: 12),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                )),
-          ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Got it'),
+            child: Text(
+              'Got it',
+              style: TextStyle(color: Colors.blue),
+            ),
           ),
         ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
+
 
   Widget _buildToxinProgress(Map<String, dynamic> toxin) {
     final int recoveryDays = toxin['recoveryDays'];

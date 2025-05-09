@@ -1,0 +1,2 @@
+C:/Users/USER/Desktop/FreshStart/android/app/.cxx/RelWithDebInfo/592q6r5r/x86/CMakeFiles/edit_cache.dir
+C:/Users/USER/Desktop/FreshStart/android/app/.cxx/RelWithDebInfo/592q6r5r/x86/CMakeFiles/rebuild_cache.dir

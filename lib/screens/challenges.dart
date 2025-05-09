@@ -181,7 +181,8 @@ Future<void> _showLevelUpPopup(int level) async {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
-        _cigarettesPerDay = userData['cigarettes_per_day'] ?? 0;
+        final cpd = userData['cigarettes_per_day'];
+_cigarettesPerDay = (cpd is int) ? cpd : int.tryParse(cpd.toString()) ?? 0;
       }
 
       // Load challenge goals and smoking history
@@ -196,7 +197,12 @@ Future<void> _showLevelUpPopup(int level) async {
   _dailyGoal = data['dailyGoal'] ?? (_cigarettesPerDay * 0.7).floor();
   _weeklyGoal = data['weeklyGoal'] ?? (_cigarettesPerDay * 7 * 0.7).floor();
   _lastUpdated = (data['lastUpdated'] as Timestamp).toDate();
-  _dailySmokingCounts = smokingData.map((key, value) => MapEntry(key, value as int));
+  _dailySmokingCounts = smokingData.map((key, value) => MapEntry(
+  key,
+  int.tryParse(value.toString()) ?? 0,
+));
+
+
   hasCompletedDaily = data['hasCompletedDaily'] ?? false;
   hasCompletedWeekly = data['hasCompletedWeekly'] ?? false;
 });

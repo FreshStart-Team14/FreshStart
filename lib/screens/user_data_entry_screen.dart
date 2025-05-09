@@ -16,6 +16,8 @@ class _UserDataEntryScreenState extends State<UserDataEntryScreen> {
   final TextEditingController _packPriceController = TextEditingController();
   DateTime _dateOfBirth = DateTime.now();
   String _selectedGender = 'Male';
+  String _selectedAvatar = '';
+
 
   Future<void> _saveUserData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -49,6 +51,8 @@ class _UserDataEntryScreenState extends State<UserDataEntryScreen> {
   'dateOfBirth': Timestamp.fromDate(_dateOfBirth),
   'tutorialShown': false,
   'dietPlan': defaultDietPlan,
+  'selectedAvatar': _selectedAvatar,
+
 });
 
 

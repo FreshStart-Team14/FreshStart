@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freshstart/screens/avatars.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -19,6 +22,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _gender = '';
   DateTime _dateOfBirth = DateTime.now();
   File? _profileImage;
+  String _profileImageUrl = '';
+
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -38,11 +43,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _username = userData['username'] ?? '';
         _email = userData['email'] ?? '';
         _weight = (userData['weight'] ?? '').toString();
+        _profileImageUrl = userData['profile_image'] ?? '';
+
         _cigarettesPerDay = (userData['cigarettes_per_day'] ?? '').toString();
         _packPrice = (userData['cost_per_pack'] ?? '').toString();
         _gender = userData['gender'] ?? '';
         _dateOfBirth =
             (userData['dateOfBirth'] as Timestamp?)?.toDate() ?? DateTime.now();
+            
       });
     }
   }
@@ -53,17 +61,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _firestore.collection('users').doc(user.uid).update({field: value});
     }
   }
-
+Future<void> requestStoragePermission() async {
+  if (await Permission.storage.request().isGranted) {
+    // Permission granted
+  } else {
+    // Handle the case when permission is denied
+  }
+}
   Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+  if (pickedFile == null) return;
 
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
+  setState(() {
+    _profileImage = File(pickedFile.path);
+  });
+
+  final user = _auth.currentUser;
+  if (user != null) {
+    try {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('${user.uid}.jpg');
+
+      await storageRef.putFile(_profileImage!);
+      final downloadUrl = await storageRef.getDownloadURL();
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'profile_image': downloadUrl,
       });
+
+      setState(() {
+        _profileImageUrl = downloadUrl;
+      });
+
+      print('✅ Profile image uploaded and saved.');
+    } on FirebaseException catch (e) {
+      print('❌ FirebaseException: ${e.code} - ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Upload failed: ${e.message}')),
+      );
+    } catch (e) {
+      print('❌ General exception: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred during upload.')),
+      );
     }
   }
+}
+
+
+
+
+
+
 
   int _calculateAge(DateTime dob) {
     final now = DateTime.now();
@@ -262,8 +313,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: 50,
                     backgroundColor: Colors.blue.shade100,
                     backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
-                        : null,
+    ? FileImage(_profileImage!)
+    : (_profileImageUrl.isNotEmpty ? NetworkImage(_profileImageUrl) : null) as ImageProvider?,
+
                     child: _profileImage == null
                         ? Text(
                             _username.isNotEmpty

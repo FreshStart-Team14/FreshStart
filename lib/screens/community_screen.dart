@@ -71,8 +71,8 @@ Kullanıcının Türkçe yazdığını unutma. Lütfen her yanıtını Türkçe 
     ..._messages,
     {'role': 'user', 'content': prompt},
   ],
-  "max_tokens": 200,
-  "temperature": 0.3,
+  "max_tokens": 700,
+  "temperature": 1.0,
 }),
 
     );

@@ -6,16 +6,18 @@ class OpenAIService {
   static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
   Future<Map<String, List<String>>> getDietPlan(String bmiCategory) async {
+    
     final prompt = '''
-    Provide a diet plan for a person who falls under the "$bmiCategory" BMI category. 
-    Return the response in a structured JSON format like:
-    {
-      "Breakfast": ["item1", "item2"],
-      "Lunch": ["item1", "item2"],
-      "Dinner": ["item1", "item2"],
-      "Snacks": ["item1", "item2"]
-    }
-    ''';
+Provide a diet plan for a person who falls under the "$bmiCategory" BMI category.
+Each food item should include an estimated quantity in grams or milliliters.
+Return the response in a structured JSON format like:
+{
+  "Breakfast": ["Greek yogurt with berries (200g)", "Oatmeal with banana (150g)"],
+  "Lunch": ["Grilled chicken breast (180g)", "Brown rice (200g)"],
+  "Dinner": ["Salmon with vegetables (250g)", "Sweet potato mash (150g)"],
+  "Snacks": ["Almonds (30g)", "Low-fat yogurt (100g)"]
+}
+''';
 
     final response = await http.post(
       Uri.parse(_apiUrl),
@@ -30,7 +32,7 @@ class OpenAIService {
           {"role": "user", "content": prompt}
         ],
         "max_tokens": 200,
-        "temperature": 0.3,
+        "temperature": 1.0,
       }),
     );
 

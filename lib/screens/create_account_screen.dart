@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_data_entry_screen.dart';
+import 'dart:async';
+
 
 class CreateAccountScreen extends StatefulWidget {
   //To set account creation interface
@@ -26,62 +28,117 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   
 
   Future<void> createAccount() async {
-    //This method is called when create account button is clicked
-    final defaultDietPlan = {
-  'breakfast': ["", ""],
-  'lunch': ["", ""],
-  'dinner': ["", ""],
-  'snacks': ["", ""],
-};
+  final defaultDietPlan = {
+    'breakfast': ["", ""],
+    'lunch': ["", ""],
+    'dinner': ["", ""],
+    'snacks': ["", ""],
+  };
 
-    try {
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        //createUserWithEmailAndPassword Automatically checks mail format and etc.
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      ); //Creates and saves user account to firebase by using mail and password
+  try {
+    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-  'username': _usernameController.text.trim(),
-  'email': _emailController.text.trim(),
-  'weight': null,
-  'height': null,
-  'age': null,
-  'cigarettes_per_day': null,
-  'cost_per_pack': null,
-  'date_of_birth': null,
-  'tutorialShown': false,
-  'dietPlan': defaultDietPlan,
-});
- //Stores above user data
+    // ✅ Send email verification
+    await userCredential.user!.sendEmailVerification();
+    _showEmailVerificationDialog();
+    
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              UserDataEntryScreen(), //After succesful account creation, navigates to user_data_entry_screen
-        ),
-      );
-    } catch (e) {
-      //Error Handling part, error message will be displayed
-      print(e);
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Error'),
-          content: Text(e.toString()),
-          actions: <Widget>[
+    await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      'username': _usernameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'weight': null,
+      'height': null,
+      'age': null,
+      'cigarettes_per_day': null,
+      'cost_per_pack': null,
+      'date_of_birth': null,
+      'tutorialShown': false,
+      'dietPlan': defaultDietPlan,
+      'selectedAvatar': null,
+    });
+
+    // ✅ Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Verify your email'),
+        content: Text('A verification link has been sent to your email. Please verify your email before continuing.'),
+        actions: [
+          TextButton(
+            child: Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          )
+        ],
+      ),
+    );
+
+    
+    
+
+  } catch (e) {
+    print(e);
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Error'),
+        content: Text(e.toString()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK'),
+          )
+        ],
+      ),
+    );
+  }
+}
+void _showEmailVerificationDialog() {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevents dismissal by tapping outside
+    builder: (context) {
+      return WillPopScope(
+        onWillPop: () async => false, // Prevents dismissal by back button
+        child: AlertDialog(
+          title: Text('Verify Your Email'),
+          content: Text('A verification link has been sent to your email. Please verify to continue.'),
+          actions: [
             TextButton(
-              child: Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop();
+                _startEmailVerificationCheck();
               },
+              child: Text('I have verified'),
             ),
           ],
         ),
       );
+    },
+  );
+}
+
+
+
+Timer? _emailCheckTimer;
+
+void _startEmailVerificationCheck() {
+  _emailCheckTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+    await FirebaseAuth.instance.currentUser?.reload();
+    var user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.emailVerified) {
+      timer.cancel();
+      Navigator.of(context).pop(); // Close the dialog
+      _proceedToNextScreen(); // Navigate to the next screen
     }
-  }
+  });
+}
+void _proceedToNextScreen() {
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(builder: (context) => UserDataEntryScreen()),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

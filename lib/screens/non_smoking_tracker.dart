@@ -704,6 +704,18 @@ Future<void> _showXPPopup(int oldXP, int newXP, int level, int earnedXP) async {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const SizedBox(height: 10),
+      Center(
+        child: Text(
+          "You can fool FreshStart, but you can't fool yourself",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            fontStyle: FontStyle.italic,
+            color: const Color.fromARGB(137, 21, 0, 255),
+          ),
+        ),
+      ),
       _buildCalendarCard(),
       const SizedBox(height: 20),
                 

@@ -114,18 +114,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       final firstWeight = _weightEntries.last.weight;
       final difference = firstWeight - weight;
 
-      if (difference >= 5) {
-        setState(() {
-          showMilestone = true;
-          milestoneMessage = '5kg Lost! Amazing Progress!';
-        });
-      } else if (difference >= 10) {
-        setState(() {
-          showMilestone = true;
-          milestoneMessage = '10kg Milestone Reached!';
-        });
-      }
-
+      
       if (showMilestone) {
         Future.delayed(const Duration(seconds: 3), () {
           setState(() => showMilestone = false);
