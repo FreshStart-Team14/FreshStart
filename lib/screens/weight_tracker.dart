@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; // Import intl package for date formatting
+import 'package:fl_chart/fl_chart.dart';
 
 class WeightTrackerScreen extends StatefulWidget { //Dynamic class so that we used state
   @override
@@ -88,6 +89,25 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
     );
   }
 
+  List<BarChartGroupData> _createBarGroups() {
+    // Take only the last 8 entries
+    final recentEntries = _weightEntries.take(8).toList().reversed.toList();
+    
+    return List.generate(recentEntries.length, (index) {
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: recentEntries[index].weight.toDouble(),
+            color: Colors.blueAccent,
+            width: 16,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,7 +129,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
             SizedBox(height: 16),
             ElevatedButton( // Button design to save weight
               onPressed: _addWeight, //when pressed this method is launched
-              child: Text('Add Non-Smoked Day'),
+              child: Text('Add Weight'),
               style: ElevatedButton.styleFrom(
                 backgroundColor:Colors.blueAccent,
                 textStyle: TextStyle(fontSize: 16),
@@ -120,6 +140,71 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen> {
               ),
             ),
             SizedBox(height: 10),
+            Container(
+              height: 200,
+              padding: EdgeInsets.all(16),
+              child: _weightEntries.isEmpty
+                  ? Center(child: Text('No weight data available'))
+                  : BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        maxY: (_weightEntries.map((e) => e.weight).reduce((a, b) => a > b ? a : b) + 10).toDouble(),
+                        minY: (_weightEntries.map((e) => e.weight).reduce((a, b) => a < b ? a : b) - 10).toDouble(),
+                        gridData: FlGridData(show: false),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                if (value.toInt() >= _weightEntries.take(8).length) {
+                                  return const Text('');
+                                }
+                                final date = _weightEntries.take(8).toList().reversed.toList()[value.toInt()].date;
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    DateFormat('MM/dd').format(date),
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                // Only show whole numbers
+                                if (value == value.roundToDouble()) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: Text(
+                                      '${value.toInt()} kg',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return const Text('');
+                              },
+                              reservedSize: 45,  // Increased to accommodate the 'kg' suffix
+                            ),
+                          ),
+                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        barGroups: _createBarGroups(),
+                      ),
+                    ),
+            ),
             SizedBox(height: 20),
             Text('Weight History:', style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
